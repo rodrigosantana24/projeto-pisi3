@@ -30,6 +30,9 @@ df, df_exploded, media_global, media_por_genero = load_data('filmes_filtrados.cs
 
 st.write("# Analises Exploratórias")
 
+st.write(" ## Média das notas por gênero")
+st.bar_chart(media_por_genero)
+
 st.write("### BoxPlot das notas médias por gênero cinematográfico")
 def plot_boxplot_by_genre(df_exploded, media_global):
     generos_unicos = sorted(df_exploded['genre_names'].unique())
