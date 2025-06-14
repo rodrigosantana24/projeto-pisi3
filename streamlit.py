@@ -25,7 +25,7 @@ def calculate_average_rating_by_genre(df_exploded):
     return df_exploded.groupby('genre_names')['vote_average'].mean()
 
 
-df, df_exploded, media_global, media_por_genero = load_data('filmes_filtrados.csv')
+df, df_exploded, media_global, media_por_genero = load_data('filmes_filtrados_sem_nulos.csv')
 
 
 st.write("# Analises Exploratórias")
