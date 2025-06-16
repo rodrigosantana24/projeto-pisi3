@@ -6,8 +6,6 @@ from scipy.stats import shapiro
 import matplotlib.pyplot as plt
 import plotly.express as px
 
-
-
 @st.cache_data # -> Cache the data loading function to avoid reloading on every interaction
 def load_data(data_path):
     df = pd.read_csv(data_path)
@@ -24,9 +22,7 @@ def explode_genre_names(df):
 def calculate_average_rating_by_genre(df_exploded):
     return df_exploded.groupby('genre_names')['vote_average'].mean()
 
-
 df, df_exploded, media_global, media_por_genero = load_data('filmes_filtrados_sem_nulos.csv')
-
 
 st.write("# Analises Exploratórias")
 
@@ -75,7 +71,6 @@ def create_boxplot(df_filtrado, generos_selecionados, media_global):
 
 plot_boxplot_by_genre(df_exploded, media_global)
 
-
 st.write("### Histograma da distribuição da nota média")
 def plot_histogram(df):
     st.write("""
@@ -98,7 +93,6 @@ def plot_histogram(df):
     st.pyplot(fig_hist)
 
 plot_histogram(df)
-
 
 st.write("### Matriz de Correlação (Spearman)")
 
@@ -127,3 +121,32 @@ def plot_correlation_matrix(df):
     st.pyplot(fig_corr)
 
 plot_correlation_matrix(df)
+
+st.write("### Receita média por idioma original")
+def plot_revenue_by_language(df):
+    receita_por_idioma = df.groupby('original_language')['revenue'].mean().sort_values(ascending=False).reset_index()
+    fig_lang = px.bar(receita_por_idioma, 
+                     x='original_language', 
+                     y='revenue', 
+                     title='Receita Média por Idioma Original',
+                     labels={'original_language': 'Idioma Original', 'revenue': 'Receita Média'},
+                     color='revenue',
+                     color_continuous_scale='Blues')
+    st.plotly_chart(fig_lang)
+
+plot_revenue_by_language(df)
+
+st.write("### Receita média por gênero cinematográfico")
+def plot_revenue_by_genre(df_exploded):
+    receita_por_genero = df_exploded.groupby('genre_names')['revenue'].mean().sort_values(ascending=False).reset_index()
+    fig_genre = px.bar(receita_por_genero, 
+                      x='genre_names', 
+                      y='revenue', 
+                      title='Receita Média por Gênero Cinematográfico',
+                      labels={'genre_names': 'Gênero', 'revenue': 'Receita Média'},
+                      color='revenue',
+                      color_continuous_scale='Teal')
+    fig_genre.update_layout(xaxis_tickangle=-35)
+    st.plotly_chart(fig_genre)
+
+plot_revenue_by_genre(df_exploded)
