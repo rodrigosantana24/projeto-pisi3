@@ -56,6 +56,7 @@ def create_boxplot(df_filtrado, generos_selecionados, media_global):
         data=df_filtrado,
         x='genre_names',
         y='vote_average',
+        hue='genre_names', 
         ax=ax,
         palette="Set2",
         showmeans=True,
@@ -127,3 +128,45 @@ def plot_correlation_matrix(df):
     st.pyplot(fig_corr)
 
 plot_correlation_matrix(df)
+st.write("### Filtros por Nota e Genero (Spearman)")
+def filtrar_filmes_por_nota_genero(df, nota_minima, generos):
+    """
+    Retorna filmes com nota igual ou superior à nota_minima e pertencentes aos gêneros informados.
+    Parâmetros:
+        df: DataFrame original (não explode)
+        nota_minima: float
+        generos: lista de strings (gêneros desejados)
+    Retorno:
+        DataFrame filtrado
+    """
+    # Explode os gêneros para facilitar o filtro
+    df_exploded = df.copy()
+    df_exploded['genre_names'] = df_exploded['genres'].apply(lambda x: x.split('-'))
+    df_exploded = df_exploded.explode('genre_names')
+    # Filtra por nota e gênero
+    filtrado = df_exploded[
+        (df_exploded['vote_average'] >= nota_minima) &
+        (df_exploded['genre_names'].isin(generos))
+    ]
+    # Remove duplicatas caso um filme tenha mais de um gênero selecionado
+    return filtrado.drop_duplicates(subset=['id'])
+
+nota_minima = st.slider("Nota mínima", min_value=0.0, max_value=10.0, value=7.0, step=0.1)
+generos = st.multiselect("Gêneros", sorted(df_exploded['genre_names'].unique()), default=[])
+if generos:
+    filmes_filtrados = filtrar_filmes_por_nota_genero(df, nota_minima, generos)
+    st.write(f"Filmes encontrados: {len(filmes_filtrados)}")
+    st.dataframe(filmes_filtrados[['title', 'vote_average', 'genre_names']])
+else:
+    st.write("Selecione pelo menos um gênero.")
+
+
+def busca_titulos(df):
+    st.write("### Busca de Filmes por Título")
+    termo = st.text_input("Digite parte do título do filme:")
+    if termo:
+        resultados = df[df['title'].str.contains(termo, case=False, na=False)]
+        st.write(f"Filmes encontrados: {len(resultados)}")
+        st.dataframe(resultados[['title', 'release_date', 'vote_average']])
+busca_titulos(df)
+
