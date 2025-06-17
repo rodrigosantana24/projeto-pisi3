@@ -9,6 +9,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, silhouette_samples
 import matplotlib.cm as cm
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_squared_error
 
 @st.cache_data # -> Cache the data loading function to avoid reloading on every interaction
 def load_data(data_path):
@@ -351,4 +354,112 @@ ax.set_xlabel('Número de Clusters (K)')
 ax.set_ylabel('Soma dos Quadrados Intra-cluster (WSS)')
 plt.grid(True)
 st.pyplot(fig)
+st.markdown("---")
+
+# Plot da regressão linear entre popularidade e média de votos
+def plot_regression_popularity_rating(df):
+    st.write("### Regressão Linear: Popularidade vs. Média de Votos")
+    st.write(
+        "Analisamos a relação entre a popularidade de um filme e sua nota média. "
+        "Para evitar que filmes extremamente populares (outliers) distorçam a visualização, "
+        "filtramos os dados para incluir apenas os 95% dos filmes menos populares."
+    )
+
+    # 1. Remover outliers de popularidade (percentil 95)
+    limite_superior = df['popularity'].quantile(0.95)
+    df_filtrado = df[df['popularity'] <= limite_superior]
+
+    # 2. Definir variáveis e treinar o modelo
+    X = df_filtrado[['popularity']]
+    y = df_filtrado['vote_average']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    # 3. Avaliar o modelo e exibir métricas no Streamlit
+    r2 = r2_score(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("R² (R-quadrado)", f"{r2:.3f}")
+    col2.metric("MSE (Erro Quadrático Médio)", f"{mse:.3f}")
+    col3.metric("Nº de Filmes Analisados", str(len(df_filtrado)))
+
+
+    # 4. Criar o gráfico
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    # Ordena os dados para que a linha de regressão seja contínua
+    sorted_idx = X_test['popularity'].argsort()
+    X_sorted = X_test.iloc[sorted_idx]
+    y_pred_sorted = y_pred[sorted_idx]
+
+    ax.scatter(X_test, y_test, color='blue', alpha=0.4, label='Dados Reais')
+    ax.plot(X_sorted, y_pred_sorted, color='red', linewidth=2.5, label='Regressão Linear')
+    ax.set_title('Popularidade vs. Média de Votos (com Regressão Linear)')
+    ax.set_xlabel('Popularidade (95% dos dados, sem outliers)')
+    ax.set_ylabel('Média de Votos')
+    ax.legend()
+    ax.grid(True)
+    
+    # 5. Exibir o gráfico no Streamlit
+    st.pyplot(fig)
+plot_regression_popularity_rating(df)
+
+def plot_regression_popularity_rating2(df):
+    # 1. Remover outliers de popularidade (usando o quantil 95)
+    limite_superior = df['popularity'].quantile(0.95)
+    df_filtrado = df[df['popularity'] <= limite_superior]
+
+    # 2. Definir variáveis e treinar o modelo de regressão linear
+    X = df_filtrado[['popularity']]
+    y = df_filtrado['vote_average']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    # 3. Avaliar o modelo e exibir métricas de desempenho
+    r2 = r2_score(y_test, y_pred)
+    mse = mean_squared_error(y_test, y_pred)
+    
+    fig_plotly = px.scatter(
+        df_filtrado,
+        x='popularity',
+        y='vote_average',
+        trendline="ols",  # "ols" significa Ordinary Least Squares, o mesmo método da regressão linear
+        trendline_color_override="red", # Define a cor da linha de regressão
+        title='Passe o mouse sobre os pontos para ver os detalhes. Você também pode dar zoom.',
+        labels={'popularity': 'Popularidade (filtrada, 95%)', 'vote_average': 'Média de Votos'},
+        opacity=0.5, # Deixa os pontos de dados um pouco transparentes
+        hover_data=['title'] # Adiciona o título do filme na informação do hover
+    )
+    
+    fig_plotly.update_layout(
+        xaxis_title="Popularidade",
+        yaxis_title="Média de Votos",
+        title_font_size=18,
+    )
+    
+    # Exibir o gráfico Plotly no Streamlit
+    st.plotly_chart(fig_plotly, use_container_width=True)
+
+    # Ordena os dados para que a linha de regressão seja contínua
+    sorted_idx = X_test['popularity'].argsort()
+    X_sorted = X_test.iloc[sorted_idx]
+    y_pred_sorted = y_pred[sorted_idx]
+
+    ax.scatter(X_test, y_test, color='blue', alpha=0.4, label='Dados Reais')
+    ax.plot(X_sorted, y_pred_sorted, color='red', linewidth=2.5, label='Linha de Regressão Linear')
+    ax.set_title('Popularidade vs. Média de Votos (com Regressão Linear)')
+    ax.set_xlabel('Popularidade (95% dos dados, sem outliers)')
+    ax.set_ylabel('Média de Votos')
+    ax.legend()
+    ax.grid(True)
+    
+# Exibir o gráfico Matplotlib no Streamlit
+plot_regression_popularity_rating2(df)
 
