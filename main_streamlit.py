@@ -5,6 +5,10 @@ import numpy as np
 from scipy.stats import shapiro
 import matplotlib.pyplot as plt
 import plotly.express as px
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score, silhouette_samples
+import matplotlib.cm as cm
 
 @st.cache_data # -> Cache the data loading function to avoid reloading on every interaction
 def load_data(data_path):
@@ -193,3 +197,158 @@ def busca_titulos(df):
         st.write(f"Filmes encontrados: {len(resultados)}")
         st.dataframe(resultados[['title', 'release_date', 'vote_average']])
 busca_titulos(df)
+
+st.write("## Análise com K-Means")
+
+st.write("### 🔧 Configurações do K-Means")
+k = st.slider("Número de clusters (K)", min_value=2, max_value=10, value=4)
+
+if st.button("Rodar K-Means"):
+    # Pré-processamento e Clusterização
+    features = ['popularity', 'vote_average', 'revenue']
+    df_kmeans = df[features].dropna().copy()
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(df_kmeans)
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    labels = kmeans.fit_predict(X_scaled)
+    df_kmeans['cluster'] = labels
+
+    st.success("K-Means aplicado com sucesso!")
+
+    # Popularidade por Cluster
+    st.write("###  Popularidade média por Cluster")
+    pop_means = df_kmeans.groupby('cluster')['popularity'].mean()
+    fig1, ax1 = plt.subplots()
+    sns.barplot(x=pop_means.index, y=pop_means.values, ax=ax1, palette="muted")
+    ax1.set_ylabel("Popularidade média")
+    ax1.set_title("Popularidade por Cluster")
+    st.pyplot(fig1)
+
+    # Gêneros por Cluster
+    st.write("### Distribuição de Gêneros por Cluster")
+    df_with_id = df.copy()
+    df_with_id['cluster'] = labels
+    df_exploded_k = explode_genre_names(df_with_id)
+    dist = df_exploded_k.groupby(['cluster','genre_names']).size().unstack(fill_value=0)
+    prop = dist.div(dist.sum(axis=1), axis=0)
+    fig2, ax2 = plt.subplots(figsize=(10,6))
+    sns.heatmap(prop, annot=True, fmt=".2f", cmap="viridis", ax=ax2)
+    ax2.set_title("Proporção de Gêneros por Cluster")
+    st.pyplot(fig2)
+
+    # Silhueta
+    st.write("### Análise de Silhueta")
+    silhouette_avg = silhouette_score(X_scaled, labels)
+    st.write(f"**Score médio da silhueta:** {silhouette_avg:.3f}")
+
+    sample_silhouette_values = silhouette_samples(X_scaled, labels)
+    fig3, ax3 = plt.subplots(figsize=(10, 6))
+    y_lower = 10
+    for i in range(k):
+        ith_cluster_silhouette_values = sample_silhouette_values[labels == i]
+        ith_cluster_silhouette_values.sort()
+        size_cluster_i = ith_cluster_silhouette_values.shape[0]
+        y_upper = y_lower + size_cluster_i
+        color = cm.nipy_spectral(float(i) / k)
+        ax3.fill_betweenx(np.arange(y_lower, y_upper), 0, ith_cluster_silhouette_values,
+                          facecolor=color, edgecolor=color, alpha=0.7)
+        ax3.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+        y_lower = y_upper + 10
+
+    ax3.set_title("Gráfico de Silhueta para cada Cluster")
+    ax3.set_xlabel("Coeficiente de Silhueta")
+    ax3.set_ylabel("Clusters")
+    ax3.axvline(x=silhouette_avg, color="red", linestyle="--")
+    st.pyplot(fig3)
+
+st.write("## Comparação de K-Means para múltiplos valores de K")
+
+k_values = st.slider("Selecione o valor máximo de K", min_value=2, max_value=10, value=6)
+
+features = ['popularity', 'vote_average', 'revenue']
+df_kmeans = df[features].dropna().copy()
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df_kmeans)
+
+results = []
+genre_props = {}
+
+for k in range(2, k_values + 1):
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    labels = kmeans.fit_predict(X_scaled)
+    df_kmeans['cluster'] = labels
+
+    # Popularidade média por cluster
+    pop_means = df_kmeans.groupby('cluster')['popularity'].mean()
+    pop_mean_overall = pop_means.mean()
+
+    # Silhueta média
+    sil_score = silhouette_score(X_scaled, labels)
+
+    # Para gêneros: mantenha alinhamento de índices e explode
+    df_with_id = df.copy()
+    df_with_id = df_with_id.loc[df_kmeans.index]  # garante alinhamento correto
+    df_with_id['cluster'] = labels
+    df_exploded_k = explode_genre_names(df_with_id)
+
+    # Cluster de maior popularidade
+    top_cluster = pop_means.idxmax()
+    dist = df_exploded_k[df_exploded_k['cluster'] == top_cluster].groupby('genre_names').size()
+    dist_prop = dist / dist.sum()
+    genre_props[k] = dist_prop.sort_values(ascending=False).head(5)  # top 5 gêneros
+
+    results.append({
+        'K': k,
+        'silhouette': sil_score,
+        'popularity_mean': pop_mean_overall,
+        'top_cluster': top_cluster
+    })
+
+results_df = pd.DataFrame(results)
+
+# Gráfico 1: Silhueta média por K
+fig1, ax1 = plt.subplots()
+sns.lineplot(x='K', y='silhouette', data=results_df, marker='o', ax=ax1)
+ax1.set_title('Silhueta média por K')
+ax1.set_ylim(0,1)
+st.pyplot(fig1)
+
+# Gráfico 2: Popularidade média geral por K
+fig2, ax2 = plt.subplots()
+sns.lineplot(x='K', y='popularity_mean', data=results_df, marker='o', ax=ax2)
+ax2.set_title('Popularidade média geral por K')
+st.pyplot(fig2)
+
+# Mostrar gêneros top por K para o cluster mais popular
+st.write("### 🎭 Top 5 gêneros do cluster mais popular por K")
+for k in range(2, k_values + 1):
+    st.write(f"**K = {k} | Cluster mais popular: {results_df.loc[results_df['K']==k, 'top_cluster'].values[0]}**")
+    top_genres = genre_props[k]
+    st.bar_chart(top_genres)
+
+
+# Seleção das variáveis numéricas
+features = ['popularity', 'vote_average', 'revenue']
+df_kmeans = df[features].dropna().copy()
+
+# Normalização
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df_kmeans)
+
+# Calcular WSS para diferentes valores de K
+wss = []
+k_values = list(range(1, 11))
+for k in k_values:
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(X_scaled)
+    wss.append(kmeans.inertia_)  # inertia_ é o WSS
+
+# Plot do Elbow Method
+fig, ax = plt.subplots()
+ax.plot(k_values, wss, marker='o')
+ax.set_title('Método do Cotovelo')
+ax.set_xlabel('Número de Clusters (K)')
+ax.set_ylabel('Soma dos Quadrados Intra-cluster (WSS)')
+plt.grid(True)
+st.pyplot(fig)
+
