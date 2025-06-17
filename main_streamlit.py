@@ -185,3 +185,11 @@ else:
     st.write("Selecione pelo menos um gênero.")
 
 
+def busca_titulos(df):
+    st.write("### Busca de Filmes por Título")
+    termo = st.text_input("Digite parte do título do filme:")
+    if termo:
+        resultados = df[df['title'].str.contains(termo, case=False, na=False)]
+        st.write(f"Filmes encontrados: {len(resultados)}")
+        st.dataframe(resultados[['title', 'release_date', 'vote_average']])
+busca_titulos(df)
