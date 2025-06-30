@@ -13,7 +13,7 @@ def load_data(data_path):
     return df, df_exploded
 
 def run_exploratory_analysis(selected_subtopic):
-    df, df_exploded = load_data('data/filmes_filtrados_sem_nulos.csv')
+    df, df_exploded = load_data('Streamlit/data/filmes_filtrados.csv')
     media_global = df['vote_average'].mean()
 
     st.title("Análises Exploratórias")
