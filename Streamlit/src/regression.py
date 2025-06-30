@@ -28,19 +28,22 @@ def run_regression(selected_topic):
     st.title("Modelos de Regressão")
 
     if selected_topic == "Resultados dos Modelos":
+        # Dados dos modelos
         resultados = [
-            {"Modelo": "SVM (StandardScaler)", "MSE": 3.941641e+16, "R²": -0.129421},
-            {"Modelo": "SVM (StandardScaler com log)", "MSE": 7.976347e+15, "R²": 0.771449},
-            {"Modelo": "KNN (StandardScaler)", "MSE": 7.062214e+15, "R²": 0.797642},
-            {"Modelo": "KNN (StandardScaler com log)", "MSE": 1.041102e+16, "R²": 0.701687},
-            {"Modelo": "Random Forest (StandardScaler)", "MSE": 1.305475e+15, "R²": 0.962593},
-            {"Modelo": "Random Forest (StandardScaler com log)", "MSE": 3.965721e+16, "R²": -0.136320},
-        ]
+                        {"Modelo": "XGBRegressor", "R²": 0.509629, "MAE": 0.484806, "RMSE": 0.639296, "MedAE": 0.386420},
+                        {"Modelo": "SVR", "R²": 0.450195, "MAE": 0.508508, "RMSE": 0.676930, "MedAE": 0.393708},
+                        {"Modelo": "RandomForestRegressor", "R²": 0.476488, "MAE": 0.502198, "RMSE": 0.660546, "MedAE": 0.415460}
+                    ]
         df_resultados = pd.DataFrame(resultados)
         styled = df_resultados.style\
             .background_gradient(subset=['R²'], cmap='RdYlGn')\
-            .background_gradient(subset=['MSE'], cmap='RdYlGn_r')\
-            .format({'MSE': '{:.2e}', 'R²': '{:.6f}'})
+            .background_gradient(subset=['MAE', 'RMSE', 'MedAE'], cmap='RdYlGn_r')\
+            .format({
+                'R²': '{:.6f}',
+                'MAE': '{:.6f}',
+                'RMSE': '{:.6f}',
+                'MedAE': '{:.6f}'
+            })
         st.write("### Tabela de Resultados dos Modelos")
         st.dataframe(styled, use_container_width=True)
 

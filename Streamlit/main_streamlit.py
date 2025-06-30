@@ -27,7 +27,6 @@ def main():
         selected_subtopic = st.sidebar.radio("Escolha um gráfico:", subtopics)
         run_exploratory_analysis(selected_subtopic)
     elif selected_tab == "Regressão":
-        # Tópicos de Regressão agora definidos aqui
         regression_topics = [
             "Resultados dos Modelos",
             "Teste dos modelos"
@@ -35,7 +34,14 @@ def main():
         selected_regression_topic = st.sidebar.radio("Escolha um tópico:", regression_topics, key="regression_topic")
         run_regression(selected_regression_topic)
     elif selected_tab == "Clusterização":
-        run_clustering()
+        clustering_topics = [
+            "Método do Cotovelo",
+            "K-Means (1 valor de K)",
+            "PCA + KMeans + Silhueta",
+            "Recomendação de Filmes"
+        ]
+        selected_clustering_topic = st.sidebar.radio("Escolha um tópico:", clustering_topics, key="clustering_topic")
+        run_clustering(selected_clustering_topic)
 
 if __name__ == "__main__":
     main()
