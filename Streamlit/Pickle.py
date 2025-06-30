@@ -74,11 +74,11 @@ def get_instancia():
 
 def main():
     # 2. Carrega objetos pickled
-    with open('Regressao/mlb_genres.pkl', 'rb') as f:
+    with open('Streamlit/models/mlb_genres.pkl', 'rb') as f:
         mlb_genres = pickle.load(f)
-    with open('Regressao/mlb_production.pkl', 'rb') as f:
+    with open('Streamlit/models/mlb_production.pkl', 'rb') as f:
         mlb_prod = pickle.load(f)
-    with open('Regressao/xgb_pipeline.pkl', 'rb') as f:
+    with open('Streamlit/models/xgb_pipeline.pkl', 'rb') as f:
         modelo = pickle.load(f)
 
     # 3. Monta DataFrame inicial
