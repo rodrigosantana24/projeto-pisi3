@@ -5,6 +5,7 @@ import streamlit as st
 from src.exploratory_analysis import run_exploratory_analysis
 from src.regression import run_regression
 from src.clustering import run_clustering
+from Regressao.transformers import DateFeatureExtractor, CapTransformer, RareCategoryGrouper
 
 def main():
     st.set_page_config(page_title="Movie App", layout="wide")
@@ -29,7 +30,7 @@ def main():
     elif selected_tab == "Regressão":
         regression_topics = [
             "Resultados dos Modelos",
-            "Teste dos modelos"
+            "Predição"
         ]
         selected_regression_topic = st.sidebar.radio("Escolha um tópico:", regression_topics, key="regression_topic")
         run_regression(selected_regression_topic)
