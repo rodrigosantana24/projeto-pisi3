@@ -24,30 +24,8 @@ def show_regression_report_table(y_true, y_pred):
     st.write("### Relatório de Regressão")
     st.dataframe(styled, use_container_width=True)
 
-def show_feature_importance_rf():
-    st.subheader("Feature Importance - Random Forest")
-    st.write("Importância das variáveis segundo o modelo Random Forest.")
-    st.image(r"data/Feature_importance-RandomForest.png", use_container_width=True)
-
-def show_force_plot_rf():
-    st.subheader("Force Plot - Random Forest")
-    st.image(r"data/Force plot-Random Forest.png", use_container_width=True)
-
-def show_shap_summary_rf():
-    st.subheader("SHAP Summary Plot - Random Forest")
-    st.image(r"data/Shap-RandomForest.png", use_container_width=True)
-
-def run_regression():
-    st.title("Resultados dos Modelos de Regressão")
-
-    st.sidebar.subheader("Tópicos de Regressão")
-    topics = [
-        "Resultados dos Modelos",
-        "Feature Importance Random Forest",
-        "Force Plot Random Forest",
-        "Shap Random Forest"
-    ]
-    selected_topic = st.sidebar.radio("Escolha um tópico:", topics, key="regression_topic")
+def run_regression(selected_topic):
+    st.title("Modelos de Regressão")
 
     if selected_topic == "Resultados dos Modelos":
         resultados = [
@@ -66,11 +44,5 @@ def run_regression():
         st.write("### Tabela de Resultados dos Modelos")
         st.dataframe(styled, use_container_width=True)
 
-    elif selected_topic == "Feature Importance Random Forest":
-        show_feature_importance_rf()
-
-    elif selected_topic == "Force Plot Random Forest":
-        show_force_plot_rf()
-
-    elif selected_topic == "Shap Random Forest":
-        show_shap_summary_rf()
+    elif selected_topic == "Teste dos modelos":
+        st.write("Teste dos modelos - conteúdo a ser implementado.")
