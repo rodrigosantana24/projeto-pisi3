@@ -134,7 +134,7 @@ def clustering_elbow():
 
 def clustering_kmeans_single():
     st.info("Utilize o dataset df_analisado.csv para análise dos clusters.")
-    data_path = 'Streamlit/data/df_analisado.csv'
+    data_path = 'data/df_analisado.csv'
     df = load_data(data_path)
     plot_kmeans_single(df)
 
