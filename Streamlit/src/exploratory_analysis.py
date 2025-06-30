@@ -109,34 +109,34 @@ def run_exploratory_analysis(selected_subtopic):
 
         plot_correlation_matrix(df)
 
-    elif selected_subtopic == "Receita por Idioma":
-        st.write("### Receita média por idioma original")
-        def plot_revenue_by_language(df):
-            receita_por_idioma = df.groupby('original_language')['revenue'].mean().sort_values(ascending=False).reset_index()
+    elif selected_subtopic == "Nota média por Idioma":
+        st.write("### nota média por idioma original")
+        def plot_vote_average_by_language(df):
+            receita_por_idioma = df.groupby('original_language')['vote_average'].mean().sort_values(ascending=False).reset_index()
             fig_lang = px.bar(receita_por_idioma, 
                             x='original_language', 
-                            y='revenue', 
-                            labels={'original_language': 'Idioma Original', 'revenue': 'Receita Média'},
-                            color='revenue',
+                            y='vote_average', 
+                            labels={'original_language': 'Idioma Original', 'vote_average': 'Receita Média'},
+                            color='vote_average',
                             color_continuous_scale='Blues')
             st.plotly_chart(fig_lang, use_container_width=True, config={"scrollZoom": True})
 
-        plot_revenue_by_language(df)
+        plot_vote_average_by_language(df)
 
-    elif selected_subtopic == "Receita por Gênero":
-        st.write("### Receita média por gênero cinematográfico")
-        def plot_revenue_by_genre(df_exploded):
-            receita_por_genero = df_exploded.groupby('genre_names')['revenue'].mean().sort_values(ascending=False).reset_index()
+    elif selected_subtopic == "Nota média por Gênero":
+        st.write("### Nota média por gênero cinematográfico")
+        def plot_vote_average_by_genre(df_exploded):
+            receita_por_genero = df_exploded.groupby('genre_names')['vote_average'].mean().sort_values(ascending=False).reset_index()
             fig_genre = px.bar(receita_por_genero, 
                             x='genre_names', 
-                            y='revenue', 
-                            labels={'genre_names': 'Gênero', 'revenue': 'Receita Média'},
-                            color='revenue',
+                            y='vote_average', 
+                            labels={'genre_names': 'Gênero', 'vote_average': 'Receita Média'},
+                            color='vote_average',
                             color_continuous_scale='Teal')
             fig_genre.update_layout(xaxis_tickangle=-35)
             st.plotly_chart(fig_genre, use_container_width=True, config={"scrollZoom": True})
 
-        plot_revenue_by_genre(df_exploded)
+        plot_vote_average_by_genre(df_exploded)
 
     elif selected_subtopic == "Filtro por Nota e Gênero":
         st.write("### Filtros por Nota e Gênero (Spearman)")
