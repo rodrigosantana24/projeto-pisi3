@@ -1,9 +1,9 @@
 # pip install streamlit pandas scikit-learn seaborn matplotlib numpy plotly statsmodels spicy
-# streamlit run main_streamlit.py
+# streamlit run Streamlit/main_streamlit.py  
 
 import streamlit as st
 from src.exploratory_analysis import run_exploratory_analysis
-from src.regression import run_classification
+from src.regression import run_regression
 from src.clustering import run_clustering
 
 def main():
@@ -17,12 +17,12 @@ def main():
     if selected_tab == "Análises Exploratórias":
         # Subtópicos para análises exploratórias
         subtopics = [
+            "Nota média por Gênero",
             "BoxPlot por Gênero",
+            "Filtro por Nota e Gênero",
             "Histograma das Notas",
-            "Matriz de Correlação",
-            "Receita por Idioma",
-            "Receita por Gênero",
-            "Filtro por Nota e Gênero"
+            "Nota média por Idioma",
+            "Matriz de Correlação"
         ]
         selected_subtopic = st.sidebar.radio("Escolha um gráfico:", subtopics)
         run_exploratory_analysis(selected_subtopic)
