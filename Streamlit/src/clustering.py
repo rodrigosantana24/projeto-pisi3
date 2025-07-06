@@ -138,34 +138,33 @@ def clustering_kmeans_single():
     plot_kmeans_single(df)
 
 def clustering_pca_kmeans():
-    st.info("Utilize o dataset X.csv para análise PCA + KMeans + Silhueta.")
-    uploaded_file = st.file_uploader("Selecione o arquivo X.csv", type="csv", key="pca_file")
-    if uploaded_file:
-        X = pd.read_csv(uploaded_file)
-        st.write("Pré-visualização dos dados:", X.head())
-        st.write("Colunas usadas:", features)
+    st.info("Carregando o dataset `X.csv` para análise PCA + KMeans + Silhueta.")
+    # Assuming X.csv is in a 'data' folder
+    X = load_data('data/X.csv')
+    st.write("Pré-visualização dos dados:", X.head())
+    st.write("Colunas usadas:", features)
 
-        scaler = RobustScaler()
-        X_scaled = scaler.fit_transform(X)
+    scaler = RobustScaler()
+    X_scaled = scaler.fit_transform(X)
 
-        pca = PCA(n_components=0.95, random_state=42)
-        X_pca = pca.fit_transform(X_scaled)
-        st.write(f"**Número de componentes PCA escolhidos:** `{X_pca.shape[1]}`")
+    pca = PCA(n_components=0.95, random_state=42)
+    X_pca = pca.fit_transform(X_scaled)
+    st.write(f"**Número de componentes PCA escolhidos:** `{X_pca.shape[1]}`")
 
-        n_clusters = st.slider("Escolha o número de clusters (K)", 2, 10, 6, key="pca_kmeans")
-        if st.button("Rodar PCA + KMeans"):
-            kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=100)
-            labels = kmeans.fit_predict(X_pca)
+    n_clusters = st.slider("Escolha o número de clusters (K)", 2, 10, 6, key="pca_kmeans")
+    if st.button("Rodar PCA + KMeans"):
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=100)
+        labels = kmeans.fit_predict(X_pca)
 
-            st.success(f"Silhouette Score médio com PCA: {silhouette_score(X_pca, labels):.3f}")
-            plot_silhouette(X_pca, labels, title="Silhueta com PCA + KMeans")
+        st.success(f"Silhouette Score médio com PCA: {silhouette_score(X_pca, labels):.3f}")
+        plot_silhouette(X_pca, labels, title="Silhueta com PCA + KMeans")
 
-            df_analisado = X.copy()
-            df_analisado['cluster'] = labels
-            for i in range(min(3, X_pca.shape[1])):
-                df_analisado[f'pca_{i}'] = X_pca[:, i]
+        df_analisado = X.copy()
+        df_analisado['cluster'] = labels
+        for i in range(min(3, X_pca.shape[1])):
+            df_analisado[f'pca_{i}'] = X_pca[:, i]
 
-            resumo_clusters(df_analisado, features)
+        resumo_clusters(df_analisado, features)
 
 def clustering_recommendation():
     st.info("Faça upload do arquivo df_analisado.csv para recomendações.")
