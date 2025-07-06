@@ -5,7 +5,6 @@ import streamlit as st
 from src.exploratory_analysis import run_exploratory_analysis
 from src.regression import run_regression
 from src.clustering import run_clustering
-from Regressao.transformers import DateFeatureExtractor, CapTransformer, RareCategoryGrouper
 
 def main():
     st.set_page_config(page_title="Movie App", layout="wide")
@@ -37,7 +36,6 @@ def main():
     elif selected_tab == "Clusterização":
         clustering_topics = [
             "Método do Cotovelo",
-            "K-Means (1 valor de K)",
             "PCA + KMeans + Silhueta",
             "Recomendação de Filmes"
         ]
