@@ -45,16 +45,23 @@ def plot_elbow_method(X):
     wss = []
     k_values = list(range(1, 11))
     for k in k_values:
-        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         kmeans.fit(X_scaled)
         wss.append(kmeans.inertia_)
 
-    fig, ax = plt.subplots()
+    # AQUI ESTÁ A MUDANÇA PRINCIPAL: Reduza ainda mais o figsize
+    # O objetivo é que o gráfico seja "naturalmente" menor para o Streamlit
+    fig, ax = plt.subplots(figsize=(4, 3)) # Reduzimos o tamanho aqui
     ax.plot(k_values, wss, 'bo-')
     ax.set_title("Método do Cotovelo")
     ax.set_xlabel("Número de Clusters (K)")
     ax.set_ylabel("Soma dos Quadrados Intra-cluster (WSS)")
-    st.pyplot(fig)
+
+    plt.tight_layout() # Mantenha o tight_layout
+
+    # Não vamos chamar st.pyplot(fig) diretamente aqui.
+    # Ele será retornado e usado dentro da função que o chama.
+    return fig # Retorne a figura em vez de plotá-la diretamente
 
 def recomendar_filmes_por_cluster(df_analisado, nome_filme, coluna_nome='title', n_recomendacoes=5):
     nome_filme = nome_filme.strip().lower()
@@ -118,7 +125,18 @@ def clustering_elbow():
     st.info("Carregando o dataset `X.csv` para o método do cotovelo.")
     X = load_data('data/X.csv')
     st.write("Pré-visualização dos dados:", X.head())
-    plot_elbow_method(X)
+
+    # --- INÍCIO DA MUDANÇA NESSÁRIA EM clustering_elbow ---
+    # Crie colunas, a primeira será para o gráfico, a segunda ficará vazia ou com outros elementos
+    col1, col2 = st.columns([0.6, 0.4]) # col1 ocupa 60% da largura, col2 ocupa 40%
+
+    with col1: # Tudo dentro deste 'with' será renderizado na primeira coluna
+        # Chame plot_elbow_method para obter a figura
+        elbow_fig = plot_elbow_method(X)
+        # Renderize a figura na primeira coluna
+        st.pyplot(elbow_fig)
+        plt.close(elbow_fig) # Feche a figura imediatamente após plotar
+
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
