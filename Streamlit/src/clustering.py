@@ -37,6 +37,30 @@ features = [
 def load_data(path):
     return pd.read_csv(path)
 
+@st.cache_data
+def get_clustered_data_for_recommendation(data_path_df, data_path_X, features):
+    st.write("Processando dados e realizando clusterização (isso pode demorar na primeira vez)...")
+    
+    # Carrega o dataframe principal (com títulos, etc.)
+    df_analisado = pd.read_csv(data_path_df)
+
+    # Carrega o dataframe APENAS com as features para clusterização
+    X_clustering = pd.read_csv(data_path_X)
+    
+    # Garante que X_clustering contém as features corretas e está alinhado com df_analisado
+    X_scaled = RobustScaler().fit_transform(X_clustering[features])
+
+    # Realiza a clusterização para 5 clusters
+    kmeans_5 = KMeans(n_clusters=5, random_state=42, n_init=10)
+    df_analisado['cluster_5'] = kmeans_5.fit_predict(X_scaled)
+
+    # Realiza a clusterização para 33 clusters
+    kmeans_33 = KMeans(n_clusters=33, random_state=42, n_init=10)
+    df_analisado['cluster_33'] = kmeans_33.fit_predict(X_scaled)
+
+    st.success("Clusterização concluída e dados prontos para recomendação!")
+    return df_analisado
+
 def plot_elbow_method(X, features): # Recebe features como argumento
     # st.subheader("Método do Cotovelo") # Subheader será adicionado na função chamadora
     scaler = RobustScaler()
@@ -124,22 +148,49 @@ def plot_davies_bouldin_method(X_scaled):
     plt.tight_layout()
     return fig # Retorna a figura
 
-def recomendar_filmes_por_cluster(df_analisado, nome_filme, coluna_nome='title', n_recomendacoes=5):
+# MUDANÇAS AQUI: adicionei 'cluster_col_name' como argumento e removi 'random_state'
+def recomendar_filmes_por_cluster(df_analisado, nome_filme, cluster_col_name='cluster', coluna_nome='title', n_recomendacoes=5):
     nome_filme = nome_filme.strip().lower()
-    if coluna_nome not in df_analisado.columns or 'cluster' not in df_analisado.columns:
-        st.error("O DataFrame precisa ter as colunas 'title' e 'cluster'.")
+    
+    # Verifica se a coluna de cluster escolhida existe no DataFrame
+    if cluster_col_name not in df_analisado.columns:
+        st.error(f"Erro: A coluna de cluster '{cluster_col_name}' não foi encontrada no DataFrame. Por favor, verifique se seu 'df_analisado.csv' contém essa coluna.")
         return
+
+    # Mantém a verificação original para a coluna 'title'
+    if coluna_nome not in df_analisado.columns:
+        st.error(f"Erro: A coluna '{coluna_nome}' (título do filme) não foi encontrada no DataFrame.")
+        return
+
     df_analisado[coluna_nome + '_lower'] = df_analisado[coluna_nome].str.lower()
     filme_linha = df_analisado[df_analisado[coluna_nome + '_lower'] == nome_filme]
+
     if filme_linha.empty:
         st.warning("Filme não encontrado no dataset.")
         return
-    cluster_id = filme_linha['cluster'].values[0]
-    st.success(f"Filme '{filme_linha[coluna_nome].values[0]}' está no cluster {cluster_id}.")
-    recomendacoes = df_analisado[
-        (df_analisado['cluster'] == cluster_id) &
+    
+    # Usa o nome da coluna de cluster selecionada
+    cluster_id = filme_linha[cluster_col_name].values[0]
+    st.success(f"Filme '{filme_linha[coluna_nome].values[0]}' está no cluster {cluster_id} (usando {cluster_col_name.replace('cluster_', '')} clusters).")
+    
+    # Filtra por filmes no mesmo cluster, excluindo o filme de entrada
+    possible_recommendations = df_analisado[
+        (df_analisado[cluster_col_name] == cluster_id) &
         (df_analisado[coluna_nome + '_lower'] != nome_filme)
-    ].sample(n=min(n_recomendacoes, len(df_analisado[df_analisado['cluster'] == cluster_id]) - 1), random_state=42)
+    ]
+
+    # Garante que não tentamos amostrar mais do que o disponível
+    num_available_recs = len(possible_recommendations)
+    if num_available_recs == 0:
+        st.info(f"Não há outros filmes no cluster {cluster_id} para recomendar.")
+        return
+
+    # Aplica amostragem aleatória: REMOVA 'random_state=42' para aleatoriedade
+    # Garante que 'n_recomendacoes' não exceda as recomendações disponíveis
+    n_to_sample = min(n_recomendacoes, num_available_recs)
+    
+    recomendacoes = possible_recommendations.sample(n=n_to_sample) # Removido random_state=42
+
     st.subheader("🎬 Recomendações:")
     st.table(recomendacoes[[coluna_nome]])
 
@@ -271,16 +322,50 @@ def clustering_pca_kmeans():
         resumo_clusters(df_analisado, features)
 
 def clustering_recommendation():
-    st.info("Carregando o arquivo `df_analisado.csv` para recomendações.")
+    st.info("Preparando sistema de recomendação.")
     
-    df_analisado = load_data('data/df_analisado.csv')
-    st.write("Pré-visualização dos dados:", df_analisado.head())
+    # Chama a função cacheada para carregar e clusterizar os dados
+    # MUDANÇA AQUI: Carrega X.csv e df_analisado.csv e clusteriza dinamicamente
+    df_analisado = get_clustered_data_for_recommendation(
+        'data/df_analisado.csv', # Caminho para o seu dataframe principal com títulos
+        'data/X.csv',             # Caminho para o dataframe SOMENTE com as features para clusterizar
+        features                  # Sua lista de features
+    )
+
+    st.write("Pré-visualização dos dados com clusters adicionados (colunas 'cluster_5' e 'cluster_33'):", df_analisado.head())
+
+    st.markdown("---")
+    st.subheader("Configurações de Recomendação")
+
+    recommendation_type = st.radio(
+        "Escolha o tipo de recomendação:",
+        ("Recomendação mais Genérica (5 Clusters)", "Recomendação mais Específica (33 Clusters)")
+    )
+
+    cluster_column_to_use = ''
+    if recommendation_type == "Recomendação mais Genérica (5 Clusters)":
+        cluster_column_to_use = 'cluster_5'
+        st.info("Você escolheu recomendações com 5 clusters. Isso tende a agrupar filmes com similaridades mais amplas.")
+    elif recommendation_type == "Recomendação mais Específica (33 Clusters)":
+        cluster_column_to_use = 'cluster_33'
+        st.info("Você escolheu recomendações com 33 clusters. Isso tende a agrupar filmes com similaridades mais detalhadas.")
+
+    num_recommendations = st.slider("Quantos filmes recomendar?", 1, 10, 5)
+
+    st.markdown("---")
+
     nome_input = st.text_input("Digite o nome de um filme para receber recomendações:")
+    
     if st.button("Recomendar filmes"):
-        if 'title' not in df_analisado.columns or 'cluster' not in df_analisado.columns:
-            st.error("O DataFrame precisa ter as colunas 'title' e 'cluster'.")
-        else:
-            recomendar_filmes_por_cluster(df_analisado, nome_input, coluna_nome='title')
+        # A verificação da existência da coluna agora é mais um fail-safe, pois a função get_clustered_data_for_recommendation deve criá-las.
+        if cluster_column_to_use not in df_analisado.columns:
+            st.error(f"Erro interno: A coluna de cluster '{cluster_column_to_use}' não foi gerada corretamente. Verifique os dados de entrada.")
+            return
+
+        recomendar_filmes_por_cluster(df_analisado, nome_input, 
+                                       cluster_col_name=cluster_column_to_use, 
+                                       coluna_nome='title', 
+                                       n_recomendacoes=num_recommendations)
 
 # Função principal para ser chamada pela main
 def run_clustering(selected_clustering_topic):
