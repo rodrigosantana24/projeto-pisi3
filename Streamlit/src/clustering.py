@@ -116,7 +116,6 @@ def plot_kmeans_single(df):
 # Funções para cada tópico
 def clustering_elbow():
     st.info("Carregando o dataset `X.csv` para o método do cotovelo.")
-    # Assuming X.csv is in a 'data' folder
     X = load_data('data/X.csv')
     st.write("Pré-visualização dos dados:", X.head())
     plot_elbow_method(X)
@@ -139,7 +138,6 @@ def clustering_kmeans_single():
 
 def clustering_pca_kmeans():
     st.info("Carregando o dataset `X.csv` para análise PCA + KMeans + Silhueta.")
-    # Assuming X.csv is in a 'data' folder
     X = load_data('data/X.csv')
     st.write("Pré-visualização dos dados:", X.head())
     st.write("Colunas usadas:", features)
@@ -167,17 +165,16 @@ def clustering_pca_kmeans():
         resumo_clusters(df_analisado, features)
 
 def clustering_recommendation():
-    st.info("Faça upload do arquivo df_analisado.csv para recomendações.")
-    uploaded_file = st.file_uploader("Selecione o arquivo df_analisado.csv", type="csv", key="recom_file")
-    if uploaded_file:
-        df_analisado = pd.read_csv(uploaded_file)
-        st.write("Pré-visualização dos dados:", df_analisado.head())
-        nome_input = st.text_input("Digite o nome de um filme para receber recomendações:")
-        if st.button("Recomendar filmes"):
-            if 'title' not in df_analisado.columns or 'cluster' not in df_analisado.columns:
-                st.error("O DataFrame precisa ter as colunas 'title' e 'cluster'.")
-            else:
-                recomendar_filmes_por_cluster(df_analisado, nome_input, coluna_nome='title')
+    st.info("Carregando o arquivo `df_analisado.csv` para recomendações.")
+    
+    df_analisado = load_data('data/df_analisado.csv')
+    st.write("Pré-visualização dos dados:", df_analisado.head())
+    nome_input = st.text_input("Digite o nome de um filme para receber recomendações:")
+    if st.button("Recomendar filmes"):
+        if 'title' not in df_analisado.columns or 'cluster' not in df_analisado.columns:
+            st.error("O DataFrame precisa ter as colunas 'title' e 'cluster'.")
+        else:
+            recomendar_filmes_por_cluster(df_analisado, nome_input, coluna_nome='title')
 
 # Função principal para ser chamada pela main
 def run_clustering(selected_clustering_topic):
