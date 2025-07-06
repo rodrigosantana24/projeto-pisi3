@@ -36,7 +36,6 @@ def main():
     elif selected_tab == "Clusterização":
         clustering_topics = [
             "Método do Cotovelo",
-            "K-Means (1 valor de K)",
             "PCA + KMeans + Silhueta",
             "Recomendação de Filmes"
         ]

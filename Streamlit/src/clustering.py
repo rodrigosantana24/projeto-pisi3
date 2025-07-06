@@ -39,7 +39,7 @@ def load_data(path):
 
 def plot_elbow_method(X, features): # Recebe features como argumento
     # st.subheader("Método do Cotovelo") # Subheader será adicionado na função chamadora
-    scaler = StandardScaler()
+    scaler = RobustScaler()
     X_scaled = scaler.fit_transform(X[features])
 
     wss = []
@@ -188,7 +188,7 @@ def clustering_elbow():
     st.write("Pré-visualização dos dados:", X.head())
 
     # Escalonamento dos dados (feito uma vez para todos os plots e cálculos)
-    scaler = StandardScaler()
+    scaler = RobustScaler()
     X_scaled = scaler.fit_transform(X[features])
 
     st.header("1. Análise para Determinar o Número Ideal de Clusters (K)")
@@ -242,12 +242,6 @@ def clustering_elbow():
         plt.close(chi_fig)
 
 
-def clustering_kmeans_single():
-    st.info("Utilize o dataset df_analisado.csv para análise dos clusters.")
-    data_path = 'data/df_analisado.csv'
-    df = load_data(data_path)
-    plot_kmeans_single(df)
-
 def clustering_pca_kmeans():
     st.info("Carregando o dataset `X.csv` para análise PCA + KMeans + Silhueta.")
     X = load_data('data/X.csv')
@@ -293,8 +287,6 @@ def run_clustering(selected_clustering_topic):
     st.title("🔍 Clusterização de Filmes")
     if selected_clustering_topic == "Método do Cotovelo":
         clustering_elbow()
-    elif selected_clustering_topic == "K-Means (1 valor de K)":
-        clustering_kmeans_single()
     elif selected_clustering_topic == "PCA + KMeans + Silhueta":
         clustering_pca_kmeans()
     elif selected_clustering_topic == "Recomendação de Filmes":
