@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_samples, silhouette_score, davies_bouldin_score
+from sklearn.metrics import silhouette_samples, silhouette_score, davies_bouldin_score, calinski_harabasz_score
 from matplotlib import cm
 
 features = [
@@ -58,6 +58,41 @@ def plot_elbow_method(X, features): # Recebe features como argumento
 
     plt.tight_layout()
     return fig # Retorna a figura
+
+def plot_calinski_harabasz_method(X_scaled):
+    # st.subheader("Calinski-Harabasz Index (CHI) por K") # Subheader será adicionado na função chamadora
+
+    chi_scores = []
+    # CHI exige no mínimo 2 clusters
+    k_values = list(range(2, 26)) # De 2 a 25 clusters, igual ao DBI
+    for k in k_values:
+        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+        labels = kmeans.fit_predict(X_scaled)
+        # CHI também exige que haja mais de um cluster formado
+        if len(np.unique(labels)) > 1:
+            chi_scores.append(calinski_harabasz_score(X_scaled, labels))
+        else:
+            chi_scores.append(np.nan) # Adiciona NaN se o cálculo não for possível
+
+    fig, ax = plt.subplots(figsize=(6, 4)) # Tamanho ajustado, consistente com os outros gráficos
+    ax.plot(k_values, chi_scores, 'co-') # 'c' para ciano, 'o' para bolinhas
+    ax.set_title("Calinski-Harabasz Index por K")
+    ax.set_xlabel("Número de Clusters (K)")
+    ax.set_ylabel("Calinski-Harabasz Index")
+    ax.set_xticks(k_values)
+    ax.grid(True, linestyle='--', alpha=0.6)
+
+    # Opcional: Adicionar anotação para a melhor K
+    # A maior pontuação de CHI é a melhor
+    if not all(pd.isna(chi_scores)): # Verifica se não são todos NaN
+        max_chi_k = k_values[np.nanargmax(chi_scores)] # np.nanargmax para ignorar NaNs
+        max_chi_val = np.nanmax(chi_scores) # np.nanmax para ignorar NaNs
+        ax.axvline(x=max_chi_k, color='purple', linestyle=':', lw=2, label=f'Melhor K (CHI): {max_chi_k}')
+        ax.legend()
+        # A mensagem de info será adicionada na função clustering_elbow
+
+    plt.tight_layout()
+    return fig # Retorne a figura para ser plotada no Streamlit
 
 def plot_davies_bouldin_method(X_scaled):
     # st.subheader("Davies-Bouldin Index (DBI)") # Subheader será adicionado na função chamadora
@@ -164,17 +199,10 @@ def clustering_elbow():
     col_elbow_plot, col_elbow_text = st.columns([0.6, 0.4])
 
     with col_elbow_plot:
-        # Passa 'features' para a função plot_elbow_method
         elbow_fig = plot_elbow_method(X, features)
         st.pyplot(elbow_fig)
         plt.close(elbow_fig)
-
-    with col_elbow_text:
-        st.markdown("### Interpretação do Método do Cotovelo")
-        st.write("Procure um 'cotovelo' (ponto de inflexão) no gráfico. Este ponto indica onde a diminuição da Soma dos Quadrados Intra-cluster (WSS) começa a desacelerar, sugerindo um número ideal de clusters.")
-
     st.markdown("---")
-
     # --- Seção do Davies-Bouldin Index (DBI) por K ---
     st.subheader("1.2. Davies-Bouldin Index (DBI) por K")
     col_dbi_plot, col_dbi_text = st.columns([0.6, 0.4])
@@ -183,12 +211,20 @@ def clustering_elbow():
         dbi_fig = plot_davies_bouldin_method(X_scaled)
         st.pyplot(dbi_fig)
         plt.close(dbi_fig)
+       
+        # Recalcula dbi_scores para pegar o K sugerido
+        dbi_scores_suggestion = []
+        k_values_for_suggestion = list(range(2, 26))
+        for k_val in k_values_for_suggestion:
+            kmeans_temp = KMeans(n_clusters=k_val, random_state=42, n_init=10)
+            labels_temp = kmeans_temp.fit_predict(X_scaled)
+            if len(np.unique(labels_temp)) > 1:
+                dbi_scores_suggestion.append(davies_bouldin_score(X_scaled, labels_temp))
+            else:
+                dbi_scores_suggestion.append(np.nan)
 
-    with col_dbi_text:
-        st.markdown("### Interpretação do Davies-Bouldin Index (DBI)")
-        st.write("O DBI mede a similaridade dentro dos clusters e a separação entre eles. **Valores menores de DBI indicam uma melhor clusterização** (clusters mais compactos e bem separados). Procure o ponto de mínimo no gráfico.")
-        if not all(pd.isna(plot_davies_bouldin_method(X_scaled).axes[0].lines[0].get_ydata())): # Checa se há dados válidos
-            min_dbi_k_val = plot_davies_bouldin_method(X_scaled).axes[0].lines[0].get_xdata()[np.nanargmin(plot_davies_bouldin_method(X_scaled).axes[0].lines[0].get_ydata())]
+        if not all(pd.isna(dbi_scores_suggestion)):
+            min_dbi_k_val = k_values_for_suggestion[np.nanargmin(dbi_scores_suggestion)]
             st.info(f"O K com o menor Davies-Bouldin Index sugerido é: `{min_dbi_k_val}`.")
         else:
             st.warning("Não foi possível determinar o K ideal pelo DBI com os dados atuais.")
@@ -196,40 +232,15 @@ def clustering_elbow():
 
     st.markdown("---")
 
-    # --- Seção de Análise Detalhada (Silhueta e DBI para K selecionado) ---
-    st.header("2. Análise Detalhada para um Número de Clusters (K) Selecionado")
-    st.write("Escolha um valor de K para ver as métricas de Silhouette e Davies-Bouldin Index em detalhes.")
+    # --- NOVA SEÇÃO: Calinski-Harabasz Index (CHI) por K ---
+    st.subheader("1.3. Calinski-Harabasz Index (CHI) por K")
+    col_chi_plot, col_chi_text = st.columns([0.6, 0.4])
 
-    k_selected = st.slider("Selecione o Número de Clusters (K)", 2, 25, 3) # K a partir de 2 para métricas
-    
-    if st.button("Analisar Clusters para K Selecionado"):
-        if k_selected < 2:
-            st.warning("O Coeficiente de Silhueta e o Davies-Bouldin Index exigem K >= 2.")
-        else:
-            st.subheader(f"Resultados para K = {k_selected}")
-            kmeans_selected = KMeans(n_clusters=k_selected, random_state=42, n_init=10)
-            labels_selected = kmeans_selected.fit_predict(X_scaled)
+    with col_chi_plot:
+        chi_fig = plot_calinski_harabasz_method(X_scaled)
+        st.pyplot(chi_fig)
+        plt.close(chi_fig)
 
-            # --- Coeficiente de Silhueta ---
-            st.markdown("#### 2.1. Coeficiente de Silhueta")
-            try:
-                plot_silhouette(X_scaled, labels_selected, title=f"Gráfico de Silhueta para K={k_selected}")
-            except ValueError as e:
-                st.error(f"Erro ao calcular Coeficiente de Silhueta: {e}. Verifique se há clusters com um único ponto ou menos.")
-
-            st.markdown("---")
-
-            # --- Davies-Bouldin Index (DBI) para o K selecionado ---
-            st.markdown("#### 2.2. Davies-Bouldin Index (DBI)")
-            try:
-                if len(np.unique(labels_selected)) > 1:
-                    davies_bouldin_single_k = davies_bouldin_score(X_scaled, labels_selected)
-                    st.markdown(f"**Davies-Bouldin Index (DBI) para K={k_selected}:** `{davies_bouldin_single_k:.3f}`")
-                    st.info("Valores menores de DBI indicam melhor clusterização (clusters mais densos e separados).")
-                else:
-                    st.warning("Não foi possível calcular o DBI. Apenas um cluster foi formado para o K selecionado.")
-            except Exception as e:
-                st.error(f"Erro ao calcular Davies-Bouldin Index para K={k_selected}: {e}")
 
 def clustering_kmeans_single():
     st.info("Utilize o dataset df_analisado.csv para análise dos clusters.")
