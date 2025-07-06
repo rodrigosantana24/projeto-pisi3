@@ -115,22 +115,21 @@ def plot_kmeans_single(df):
 
 # Funções para cada tópico
 def clustering_elbow():
-    st.info("Utilize o dataset X.csv para o método do cotovelo.")
-    uploaded_file = st.file_uploader("Selecione o arquivo X.csv", type="csv")
-    if uploaded_file:
-        X = pd.read_csv(uploaded_file)
-        st.write("Pré-visualização dos dados:", X.head())
-        plot_elbow_method(X)
+    st.info("Carregando o dataset `X.csv` para o método do cotovelo.")
+    # Assuming X.csv is in a 'data' folder
+    X = load_data('data/X.csv')
+    st.write("Pré-visualização dos dados:", X.head())
+    plot_elbow_method(X)
 
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(X)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
 
-        k_sil = st.slider("Escolha o número de clusters (K) para a silhueta", 2, 10, 3)
-        if st.button("Mostrar Silhueta"):
-            kmeans = KMeans(n_clusters=k_sil, random_state=42)
-            labels = kmeans.fit_predict(X_scaled)
-            st.subheader("Gráfico de Silhueta")
-            plot_silhouette(X_scaled, labels)
+    k_sil = st.slider("Escolha o número de clusters (K) para a silhueta", 2, 10, 3)
+    if st.button("Mostrar Silhueta"):
+        kmeans = KMeans(n_clusters=k_sil, random_state=42, n_init=10) # Add n_init
+        labels = kmeans.fit_predict(X_scaled)
+        st.subheader("Gráfico de Silhueta")
+        plot_silhouette(X_scaled, labels)
 
 def clustering_kmeans_single():
     st.info("Utilize o dataset df_analisado.csv para análise dos clusters.")
