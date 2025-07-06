@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_samples, silhouette_score
+from sklearn.metrics import silhouette_samples, silhouette_score, davies_bouldin_score
 from matplotlib import cm
 
 features = [
@@ -37,31 +37,57 @@ features = [
 def load_data(path):
     return pd.read_csv(path)
 
-def plot_elbow_method(X):
-    st.subheader("Método do Cotovelo")
+def plot_elbow_method(X, features): # Recebe features como argumento
+    # st.subheader("Método do Cotovelo") # Subheader será adicionado na função chamadora
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X[features])
 
     wss = []
-    k_values = list(range(1, 11))
+    k_values = list(range(1, 26))
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         kmeans.fit(X_scaled)
         wss.append(kmeans.inertia_)
 
-    # AQUI ESTÁ A MUDANÇA PRINCIPAL: Reduza ainda mais o figsize
-    # O objetivo é que o gráfico seja "naturalmente" menor para o Streamlit
-    fig, ax = plt.subplots(figsize=(4, 3)) # Reduzimos o tamanho aqui
+    fig, ax = plt.subplots(figsize=(6, 4)) # Tamanho ajustado
     ax.plot(k_values, wss, 'bo-')
     ax.set_title("Método do Cotovelo")
     ax.set_xlabel("Número de Clusters (K)")
     ax.set_ylabel("Soma dos Quadrados Intra-cluster (WSS)")
+    ax.set_xticks(k_values) # Para garantir que todos os K's sejam mostrados
 
-    plt.tight_layout() # Mantenha o tight_layout
+    plt.tight_layout()
+    return fig # Retorna a figura
 
-    # Não vamos chamar st.pyplot(fig) diretamente aqui.
-    # Ele será retornado e usado dentro da função que o chama.
-    return fig # Retorne a figura em vez de plotá-la diretamente
+def plot_davies_bouldin_method(X_scaled):
+    # st.subheader("Davies-Bouldin Index (DBI)") # Subheader será adicionado na função chamadora
+
+    dbi_scores = []
+    k_values = list(range(2, 26)) # DBI exige no mínimo 2 clusters
+    for k in k_values:
+        kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+        labels = kmeans.fit_predict(X_scaled)
+        if len(np.unique(labels)) > 1: # Verifica se há mais de um cluster formado
+            dbi_scores.append(davies_bouldin_score(X_scaled, labels))
+        else:
+            dbi_scores.append(np.nan) # Se apenas um cluster, adicione NaN
+
+    fig, ax = plt.subplots(figsize=(6, 4)) # Tamanho ajustado
+    ax.plot(k_values, dbi_scores, 'go-')
+    ax.set_title("Davies-Bouldin Index por K")
+    ax.set_xlabel("Número de Clusters (K)")
+    ax.set_ylabel("Davies-Bouldin Index")
+    ax.set_xticks(k_values)
+    ax.grid(True, linestyle='--', alpha=0.6)
+
+    if not all(pd.isna(dbi_scores)):
+        min_dbi_k = k_values[np.nanargmin(dbi_scores)]
+        min_dbi_val = np.nanmin(dbi_scores)
+        ax.axvline(x=min_dbi_k, color='red', linestyle=':', lw=2, label=f'Melhor K (DBI): {min_dbi_k}')
+        ax.legend()
+
+    plt.tight_layout()
+    return fig # Retorna a figura
 
 def recomendar_filmes_por_cluster(df_analisado, nome_filme, coluna_nome='title', n_recomendacoes=5):
     nome_filme = nome_filme.strip().lower()
@@ -88,7 +114,7 @@ def plot_silhouette(X_scaled, labels, title="Gráfico de Silhueta"):
     silhouette_avg = np.mean(silhouette_vals)
 
     y_lower = 10
-    fig, ax1 = plt.subplots(figsize=(8, 4))
+    fig, ax1 = plt.subplots(figsize=(8, 4)) # Tamanho ajustado para silhueta
     ax1.set_xlim([-0.1, 1])
     ax1.set_ylim([0, len(X_scaled) + (n_clusters + 1) * 10])
 
@@ -109,7 +135,8 @@ def plot_silhouette(X_scaled, labels, title="Gráfico de Silhueta"):
     ax1.set_yticks([])
     ax1.set_xticks(np.arange(-0.1, 1.1, 0.2))
     plt.tight_layout()
-    st.pyplot(fig)
+    st.pyplot(fig) # Plota diretamente aqui
+    plt.close(fig) # Fecha a figura
     st.markdown(f"**Silhouette Score médio:** `{silhouette_avg:.3f}`")
 
 def resumo_clusters(df, features):
@@ -120,33 +147,89 @@ def plot_kmeans_single(df):
     st.subheader("Análise de KMeans")
     st.write(df.head())
 
-# Funções para cada tópico
 def clustering_elbow():
-    st.info("Carregando o dataset `X.csv` para o método do cotovelo.")
+    st.info("Carregando o dataset `X.csv` para análise de clusters.")
     X = load_data('data/X.csv')
     st.write("Pré-visualização dos dados:", X.head())
 
-    # --- INÍCIO DA MUDANÇA NESSÁRIA EM clustering_elbow ---
-    # Crie colunas, a primeira será para o gráfico, a segunda ficará vazia ou com outros elementos
-    col1, col2 = st.columns([0.6, 0.4]) # col1 ocupa 60% da largura, col2 ocupa 40%
-
-    with col1: # Tudo dentro deste 'with' será renderizado na primeira coluna
-        # Chame plot_elbow_method para obter a figura
-        elbow_fig = plot_elbow_method(X)
-        # Renderize a figura na primeira coluna
-        st.pyplot(elbow_fig)
-        plt.close(elbow_fig) # Feche a figura imediatamente após plotar
-
-
+    # Escalonamento dos dados (feito uma vez para todos os plots e cálculos)
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+    X_scaled = scaler.fit_transform(X[features])
 
-    k_sil = st.slider("Escolha o número de clusters (K) para a silhueta", 2, 10, 3)
-    if st.button("Mostrar Silhueta"):
-        kmeans = KMeans(n_clusters=k_sil, random_state=42, n_init=10) # Add n_init
-        labels = kmeans.fit_predict(X_scaled)
-        st.subheader("Gráfico de Silhueta")
-        plot_silhouette(X_scaled, labels)
+    st.header("1. Análise para Determinar o Número Ideal de Clusters (K)")
+    st.markdown("---")
+
+    # --- Seção do Método do Cotovelo ---
+    st.subheader("1.1. Método do Cotovelo")
+    col_elbow_plot, col_elbow_text = st.columns([0.6, 0.4])
+
+    with col_elbow_plot:
+        # Passa 'features' para a função plot_elbow_method
+        elbow_fig = plot_elbow_method(X, features)
+        st.pyplot(elbow_fig)
+        plt.close(elbow_fig)
+
+    with col_elbow_text:
+        st.markdown("### Interpretação do Método do Cotovelo")
+        st.write("Procure um 'cotovelo' (ponto de inflexão) no gráfico. Este ponto indica onde a diminuição da Soma dos Quadrados Intra-cluster (WSS) começa a desacelerar, sugerindo um número ideal de clusters.")
+
+    st.markdown("---")
+
+    # --- Seção do Davies-Bouldin Index (DBI) por K ---
+    st.subheader("1.2. Davies-Bouldin Index (DBI) por K")
+    col_dbi_plot, col_dbi_text = st.columns([0.6, 0.4])
+
+    with col_dbi_plot:
+        dbi_fig = plot_davies_bouldin_method(X_scaled)
+        st.pyplot(dbi_fig)
+        plt.close(dbi_fig)
+
+    with col_dbi_text:
+        st.markdown("### Interpretação do Davies-Bouldin Index (DBI)")
+        st.write("O DBI mede a similaridade dentro dos clusters e a separação entre eles. **Valores menores de DBI indicam uma melhor clusterização** (clusters mais compactos e bem separados). Procure o ponto de mínimo no gráfico.")
+        if not all(pd.isna(plot_davies_bouldin_method(X_scaled).axes[0].lines[0].get_ydata())): # Checa se há dados válidos
+            min_dbi_k_val = plot_davies_bouldin_method(X_scaled).axes[0].lines[0].get_xdata()[np.nanargmin(plot_davies_bouldin_method(X_scaled).axes[0].lines[0].get_ydata())]
+            st.info(f"O K com o menor Davies-Bouldin Index sugerido é: `{min_dbi_k_val}`.")
+        else:
+            st.warning("Não foi possível determinar o K ideal pelo DBI com os dados atuais.")
+
+
+    st.markdown("---")
+
+    # --- Seção de Análise Detalhada (Silhueta e DBI para K selecionado) ---
+    st.header("2. Análise Detalhada para um Número de Clusters (K) Selecionado")
+    st.write("Escolha um valor de K para ver as métricas de Silhouette e Davies-Bouldin Index em detalhes.")
+
+    k_selected = st.slider("Selecione o Número de Clusters (K)", 2, 25, 3) # K a partir de 2 para métricas
+    
+    if st.button("Analisar Clusters para K Selecionado"):
+        if k_selected < 2:
+            st.warning("O Coeficiente de Silhueta e o Davies-Bouldin Index exigem K >= 2.")
+        else:
+            st.subheader(f"Resultados para K = {k_selected}")
+            kmeans_selected = KMeans(n_clusters=k_selected, random_state=42, n_init=10)
+            labels_selected = kmeans_selected.fit_predict(X_scaled)
+
+            # --- Coeficiente de Silhueta ---
+            st.markdown("#### 2.1. Coeficiente de Silhueta")
+            try:
+                plot_silhouette(X_scaled, labels_selected, title=f"Gráfico de Silhueta para K={k_selected}")
+            except ValueError as e:
+                st.error(f"Erro ao calcular Coeficiente de Silhueta: {e}. Verifique se há clusters com um único ponto ou menos.")
+
+            st.markdown("---")
+
+            # --- Davies-Bouldin Index (DBI) para o K selecionado ---
+            st.markdown("#### 2.2. Davies-Bouldin Index (DBI)")
+            try:
+                if len(np.unique(labels_selected)) > 1:
+                    davies_bouldin_single_k = davies_bouldin_score(X_scaled, labels_selected)
+                    st.markdown(f"**Davies-Bouldin Index (DBI) para K={k_selected}:** `{davies_bouldin_single_k:.3f}`")
+                    st.info("Valores menores de DBI indicam melhor clusterização (clusters mais densos e separados).")
+                else:
+                    st.warning("Não foi possível calcular o DBI. Apenas um cluster foi formado para o K selecionado.")
+            except Exception as e:
+                st.error(f"Erro ao calcular Davies-Bouldin Index para K={k_selected}: {e}")
 
 def clustering_kmeans_single():
     st.info("Utilize o dataset df_analisado.csv para análise dos clusters.")
@@ -167,7 +250,7 @@ def clustering_pca_kmeans():
     X_pca = pca.fit_transform(X_scaled)
     st.write(f"**Número de componentes PCA escolhidos:** `{X_pca.shape[1]}`")
 
-    n_clusters = st.slider("Escolha o número de clusters (K)", 2, 10, 6, key="pca_kmeans")
+    n_clusters = st.slider("Escolha o número de clusters (K)", 2, 25, 6, key="pca_kmeans")
     if st.button("Rodar PCA + KMeans"):
         kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=100)
         labels = kmeans.fit_predict(X_pca)
