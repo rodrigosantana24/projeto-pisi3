@@ -34,3 +34,33 @@ class CreditsTransformer(BaseEstimator, TransformerMixin):
     def _filter_top_actors(self, actor_list):
         # Retorna uma lista com os atores do top N ou 'Outros'
         return [actor if actor in self.top_actors else self.other_label for actor in actor_list]
+    
+    def process_multilabel_column(train_series, test_series, sep='-', top_n=20, outros=True, prefix=''):
+        # Extrair top N do treino
+        exploded = train_series.str.split(sep).explode().str.strip()
+        top = exploded.value_counts().nlargest(top_n).index
+
+        def filter_top(vals):
+            vals = [v.strip() for v in vals.split(sep)]
+            if outros:
+                return [v if v in top else 'Outros' for v in vals]
+            else:
+                return [v for v in vals if v in top]
+
+        # Aplicar transformação
+        train_processed = train_series.apply(filter_top)
+        test_processed = test_series.apply(filter_top)
+
+        mlb = MultiLabelBinarizer()
+        train_encoded = pd.DataFrame(
+            mlb.fit_transform(train_processed),
+            columns=[f'{prefix}_{cls}' for cls in mlb.classes_],
+            index=train_series.index
+        )
+        test_encoded = pd.DataFrame(
+            mlb.transform(test_processed),
+            columns=[f'{prefix}_{cls}' for cls in mlb.classes_],
+            index=test_series.index
+        )
+
+        return train_encoded, test_encoded, mlb
