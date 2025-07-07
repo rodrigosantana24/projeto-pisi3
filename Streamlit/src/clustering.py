@@ -67,7 +67,7 @@ def plot_elbow_method(X, features): # Recebe features como argumento
     X_scaled = scaler.fit_transform(X[features])
 
     wss = []
-    k_values = list(range(1, 26))
+    k_values = list(range(1, 11))
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         kmeans.fit(X_scaled)
@@ -88,7 +88,7 @@ def plot_calinski_harabasz_method(X_scaled):
 
     chi_scores = []
     # CHI exige no mínimo 2 clusters
-    k_values = list(range(2, 26)) # De 2 a 25 clusters, igual ao DBI
+    k_values = list(range(2, 11)) # De 2 a 25 clusters, igual ao DBI
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
@@ -122,7 +122,7 @@ def plot_davies_bouldin_method(X_scaled):
     # st.subheader("Davies-Bouldin Index (DBI)") # Subheader será adicionado na função chamadora
 
     dbi_scores = []
-    k_values = list(range(2, 26)) # DBI exige no mínimo 2 clusters
+    k_values = list(range(2, 11)) # DBI exige no mínimo 2 clusters
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
@@ -326,11 +326,7 @@ def clustering_recommendation():
     
     # Chama a função cacheada para carregar e clusterizar os dados
     # MUDANÇA AQUI: Carrega X.csv e df_analisado.csv e clusteriza dinamicamente
-    df_analisado = get_clustered_data_for_recommendation(
-        'data/df_analisado.csv', # Caminho para o seu dataframe principal com títulos
-        'data/X.csv',             # Caminho para o dataframe SOMENTE com as features para clusterizar
-        features                  # Sua lista de features
-    )
+    df_analisado = load_df_analisado('data/df_analisado_33.csv')
 
     st.write("Pré-visualização dos dados com clusters adicionados (colunas 'cluster_5' e 'cluster_33'):", df_analisado.head())
 
@@ -344,11 +340,13 @@ def clustering_recommendation():
 
     cluster_column_to_use = ''
     if recommendation_type == "Recomendação mais Genérica (5 Clusters)":
-        cluster_column_to_use = 'cluster_5'
-        st.info("Você escolheu recomendações com 5 clusters. Isso tende a agrupar filmes com similaridades mais amplas.")
+        df_analisado = load_df_analisado('data/df_analisado_5.csv')
+        cluster_column_to_use = 'cluster'
+        st.info("Você escolheu recomendações com 5 clusters.")
     elif recommendation_type == "Recomendação mais Específica (33 Clusters)":
-        cluster_column_to_use = 'cluster_33'
-        st.info("Você escolheu recomendações com 33 clusters. Isso tende a agrupar filmes com similaridades mais detalhadas.")
+        df_analisado = load_df_analisado('data/df_analisado_33.csv')
+        cluster_column_to_use = 'cluster'
+        st.info("Você escolheu recomendações com 33 clusters.")
 
     num_recommendations = st.slider("Quantos filmes recomendar?", 1, 10, 5)
 
@@ -366,6 +364,18 @@ def clustering_recommendation():
                                        cluster_col_name=cluster_column_to_use, 
                                        coluna_nome='title', 
                                        n_recomendacoes=num_recommendations)
+
+@st.cache_data
+def load_df_analisado(data_path_df):
+    st.write("Carregando dados com clusters prontos...")
+    df = pd.read_csv(data_path_df)
+
+    if 'cluster' not in df.columns:
+        st.error("Erro: A coluna 'cluster' não foi encontrada no DataFrame.")
+        return None
+
+    return df
+
 
 # Função principal para ser chamada pela main
 def run_clustering(selected_clustering_topic):
