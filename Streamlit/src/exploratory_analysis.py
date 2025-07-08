@@ -10,58 +10,88 @@ def load_data(data_path):
     df = pd.read_csv(data_path)
     df['genre_names'] = df['genres'].apply(lambda x: x.split('-'))
     df_exploded = df.explode('genre_names')
+    df['release_year'] = pd.to_datetime(df['release_date'], errors='coerce').dt.year
     return df, df_exploded
 
+def carregarTraducaoGeneros():
+    TRADUCOES_GENEROS = {
+                'Action': 'Ação',
+                'Adventure': 'Aventura',
+                'Animation': 'Animação',
+                'Comedy': 'Comédia',
+                'Crime': 'Crime',
+                'Documentary': 'Documentário',
+                'Drama': 'Drama',
+                'Family': 'Família',
+                'Fantasy': 'Fantasia',
+                'History': 'História',
+                'Horror': 'Terror',
+                'Music': 'Música',
+                'Mystery': 'Mistério',
+                'Romance': 'Romance',
+                'Science Fiction': 'Ficção Científica',
+                'TV Movie': 'Filme de TV',
+                'Thriller': 'Suspense',
+                'War': 'Guerra',
+                'Western': 'Faroeste'
+            }
+    return TRADUCOES_GENEROS
+
 def run_exploratory_analysis(selected_subtopic):
-    df, df_exploded = load_data('data/filmes_filtrados.csv')
+    df, df_exploded = load_data('Streamlit/data/filmes_filtrados_sem_nulos.csv')
     media_global = df['vote_average'].mean()
 
     st.title("Análises Exploratórias")
 
     if selected_subtopic == "BoxPlot por Gênero":
-        st.write("### BoxPlot das notas médias por gênero cinematográfico")
-        generos_unicos = sorted(df_exploded['genre_names'].unique())
-        generos_selecionados = st.multiselect(
-            "Selecione os gêneros para exibir no BoxPlot:",
-            generos_unicos,
-            default=generos_unicos,
-            key="boxplot_generos"
-        )
+        st.write("### BoxPlot das Notas Médias por Gênero")
 
-        def filter_by_selected_genres(df_exploded, generos_selecionados):
-            df_filtrado = df_exploded[df_exploded['genre_names'].isin(generos_selecionados)].copy()
-            generos_ordenados = sorted(generos_selecionados)
-            df_filtrado['genre_names'] = pd.Categorical(df_filtrado['genre_names'], categories=generos_ordenados, ordered=True)
-            df_filtrado = df_filtrado.sort_values('genre_names')
-            return df_filtrado
+        def plot_boxplot_notas_por_genero(df):
+            df_exploded = df.dropna(subset=['genres']).copy()
+            df_exploded['genres'] = df_exploded['genres'].str.split(', ')
+            df_exploded = df_exploded.explode('genres')
+            df_exploded['genres_translated'] = df_exploded['genres'].map(carregarTraducaoGeneros())
 
-        def create_boxplot(df_filtrado, generos_selecionados, media_global):
-            fig, ax = plt.subplots(figsize=(12, 7))
-            sns.boxplot(
-                data=df_filtrado,
-                x='genre_names',
-                y='vote_average',
-                hue='genre_names',
-                palette="Set2",
-                showmeans=True,
-                meanprops={"marker":"o",
-                        "markerfacecolor":"white", 
-                        "markeredgecolor":"black",
-                        "markersize":"7"},
-                legend=False
-            )
-            ax.axhline(media_global, color='red', linestyle='--', linewidth=2, label=f'Média Global: {media_global:.2f}')
-            ax.set_xlabel("Gênero", fontsize=12)
-            ax.set_ylabel("Nota Média", fontsize=12)
-            ax.set_title("BoxPlot das Notas Médias por Gênero Cinematográfico", fontsize=15, fontweight='bold')
-            plt.xticks(rotation=35, ha='right')
-            ax.legend()
-            plt.tight_layout()
-            return fig
+            generos_unicos = sorted(df_exploded['genres_translated'].dropna().unique())
+            generos_selecionados = st.multiselect("Selecione os gêneros para o BoxPlot:", generos_unicos, default=generos_unicos)
 
-        df_boxplot = filter_by_selected_genres(df_exploded, generos_selecionados)
-        fig_boxplot = create_boxplot(df_boxplot, generos_selecionados, media_global)
-        st.pyplot(fig_boxplot)
+            df_filtrado = df_exploded[df_exploded['genres_translated'].isin(generos_selecionados)]
+
+            if not df_filtrado.empty:
+                media_global = df['vote_average'].mean()
+                df_filtrado['genres_translated'] = pd.Categorical(
+                    df_filtrado['genres_translated'],
+                    categories=generos_selecionados,
+                    ordered=True
+                )
+                df_filtrado = df_filtrado.sort_values('genres_translated')
+
+                fig, ax = plt.subplots(figsize=(10, 8))
+                sns.boxplot(
+                    data=df_filtrado,
+                    x='vote_average',
+                    y='genres_translated',
+                    color='steelblue',
+                    showmeans=True,
+                    meanprops={
+                        "marker": "o",
+                        "markerfacecolor": "white",
+                        "markeredgecolor": "black",
+                        "markersize": 7
+                    }
+                )
+                ax.axvline(media_global, color='red', linestyle='--', linewidth=2, label=f'Média Global: {media_global:.2f}')
+                ax.set_xlabel("Nota Média", fontsize=12)
+                ax.set_ylabel("Gênero", fontsize=12)
+                ax.set_title("BoxPlot das Notas Médias por Gênero", fontsize=15, fontweight='bold')
+                ax.legend()
+                plt.tight_layout()
+                st.pyplot(fig)
+            else:
+                st.info("Nenhum dado disponível para os gêneros selecionados.")
+
+        plot_boxplot_notas_por_genero(df)
+
 
     elif selected_subtopic == "Histograma das Notas":
         st.write("### Histograma da distribuição da nota média")
@@ -128,12 +158,11 @@ def run_exploratory_analysis(selected_subtopic):
         def plot_vote_average_by_genre(df_exploded):
             receita_por_genero = df_exploded.groupby('genre_names')['vote_average'].mean().sort_values(ascending=False).reset_index()
             fig_genre = px.bar(receita_por_genero, 
-                            x='genre_names', 
-                            y='vote_average', 
+                            x='vote_average', 
+                            y='genre_names', 
                             labels={'genre_names': 'Gênero', 'vote_average': 'Receita Média'},
                             color='vote_average',
                             color_continuous_scale='Teal')
-            fig_genre.update_layout(xaxis_tickangle=-35)
             st.plotly_chart(fig_genre, use_container_width=True, config={"scrollZoom": True})
 
         plot_vote_average_by_genre(df_exploded)
