@@ -188,3 +188,17 @@ def run_exploratory_analysis(selected_subtopic):
             st.dataframe(filmes_filtrados[['title', 'vote_average', 'genre_names']])
         else:
             st.write("Selecione pelo menos um gênero.")
+    
+    elif selected_subtopic == "Evolução da Nota Média ao Longo dos Anos":
+        st.write("### Evolução da Nota Média ao Longo dos Anos")
+
+        def plot_evolucao_nota_por_ano(df):
+            df_ano = df.dropna(subset=['release_year', 'vote_average'])
+            df_ano = df_ano.groupby('release_year')['vote_average'].mean().reset_index()
+            fig = px.line(df_ano, x='release_year', y='vote_average', 
+                        labels={'release_year': 'Ano de Lançamento', 'vote_average': 'Nota Média'},
+                        markers=True)
+            fig.update_layout(title='Média de Notas por Ano de Lançamento', xaxis_title='Ano', yaxis_title='Nota Média')
+            st.plotly_chart(fig, use_container_width=True)
+        
+        plot_evolucao_nota_por_ano(df)

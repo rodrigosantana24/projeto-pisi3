@@ -15,14 +15,14 @@ def main():
     )
 
     if selected_tab == "Análises Exploratórias":
-        # Subtópicos para análises exploratórias
         subtopics = [
             "Nota média por Gênero",
             "BoxPlot por Gênero",
             "Filtro por Nota e Gênero",
             "Histograma das Notas",
             "Nota média por Idioma",
-            "Matriz de Correlação"
+            "Matriz de Correlação",
+            "Evolução da Nota Média ao Longo dos Anos"
         ]
         selected_subtopic = st.sidebar.radio("Escolha um gráfico:", subtopics)
         run_exploratory_analysis(selected_subtopic)
