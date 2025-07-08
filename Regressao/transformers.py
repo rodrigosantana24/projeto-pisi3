@@ -1,6 +1,7 @@
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.preprocessing import MultiLabelBinarizer
 import pandas as pd
+import numpy as np
 
 # === Definições de classes customizadas usadas no pipeline ===
 class DateFeatureExtractor(BaseEstimator, TransformerMixin):
@@ -16,8 +17,13 @@ class DateFeatureExtractor(BaseEstimator, TransformerMixin):
         X['year'] = X[self.date_column].dt.year
         X['month'] = X[self.date_column].dt.month
         return X.drop(columns=[self.date_column])
+    
     def get_feature_names_out(self, input_features=None):
-        return ['year', 'month']
+        output_features = list(input_features)
+        if self.date_column in output_features:
+            output_features.remove(self.date_column)
+        output_features.extend(['year', 'month'])
+        return output_features
 
 class CapTransformer(BaseEstimator, TransformerMixin):
     def __init__(self, columns):
@@ -162,3 +168,31 @@ class TopNMultiLabelTransformer(BaseEstimator, TransformerMixin):
     
     def get_feature_names_out(self, input_features=None):
         return [f'{self.prefix}_{cls}' for cls in self.mlb.classes_]
+    
+class BudgetRuntimeRatioTransformer(BaseEstimator, TransformerMixin):
+    """
+    Calcula a razão entre o orçamento (budget) e a duração (runtime) de um filme.
+    Trata divisões por zero e valores ausentes.
+    """
+    def __init__(self, budget_col='budget', runtime_col='runtime', new_col_name='budget_runtime_ratio'):
+        self.budget_col = budget_col
+        self.runtime_col = runtime_col
+        self.new_col_name = new_col_name
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X = X.copy()
+        # Calcula a razão
+        X[self.new_col_name] = X[self.budget_col] / X[self.runtime_col]
+        # Substitui infinitos (resultantes da divisão por zero) por NaN
+        X[self.new_col_name] = X[self.new_col_name].replace([np.inf, -np.inf], np.nan)
+        # Preenche todos os NaNs com 0
+        X[self.new_col_name] = X[self.new_col_name].fillna(0)
+        return X
+
+    def get_feature_names_out(self, input_features=None):
+        if input_features is None:
+            return [self.new_col_name]
+        return list(input_features) + [self.new_col_name]
