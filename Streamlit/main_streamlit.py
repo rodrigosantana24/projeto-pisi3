@@ -22,7 +22,8 @@ def main():
             "Histograma das Notas",
             "Nota média por Idioma",
             "Matriz de Correlação",
-            "Evolução da Nota Média ao Longo dos Anos"
+            "Evolução da Nota Média ao Longo dos Anos",
+            "Nota Média por Faixa de Orçamento"
         ]
         selected_subtopic = st.sidebar.radio("Escolha um gráfico:", subtopics)
         run_exploratory_analysis(selected_subtopic)

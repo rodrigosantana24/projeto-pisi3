@@ -202,3 +202,29 @@ def run_exploratory_analysis(selected_subtopic):
             st.plotly_chart(fig, use_container_width=True)
         
         plot_evolucao_nota_por_ano(df)
+
+    elif selected_subtopic == "Nota Média por Faixa de Orçamento":
+        st.write("### Nota Média por Faixa de Orçamento")
+
+        # Definindo mais faixas
+        bins = [0, 5e6, 1e7, 2e7, 5e7, 1e8, 2e8, 3e8, df['budget'].max()]
+        labels = ['Até 5M', '5M–10M', '10M–20M', '20M–50M', '50M–100M', '100M–200M', '200M–300M', '300M+']
+        
+        df['budget_range'] = pd.cut(df['budget'], bins=bins, labels=labels, include_lowest=True)
+
+        faixa_df = df[df['budget_range'].notna()].groupby('budget_range')['vote_average'].mean().reset_index()
+        faixa_df = faixa_df.sort_values('vote_average', ascending=False)
+
+        fig_faixa = px.bar(
+            faixa_df,
+            x='budget_range',
+            y='vote_average',
+            color='vote_average',
+            color_continuous_scale='Blues',
+            labels={
+                'vote_average': 'Nota Média',
+                'budget_range': 'Faixa de Orçamento (USD)'
+            }
+        )
+        fig_faixa.update_layout(xaxis_title='Faixa de Orçamento', yaxis_title='Nota Média')
+        st.plotly_chart(fig_faixa, use_container_width=True)
