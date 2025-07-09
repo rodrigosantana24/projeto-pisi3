@@ -5,6 +5,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.figure_factory as ff
 
 @st.cache_data
 def load_data(data_path):
@@ -109,16 +110,40 @@ def run_exploratory_analysis(selected_subtopic):
         show_kde = st.checkbox("Exibir curva de densidade (KDE)", value=True, key="hist_kde")
 
         def plot_histogram(df, bins, show_kde):
+            # Define estilo escuro
+            plt.style.use("dark_background")
+            sns.set_style("darkgrid", {
+                "axes.facecolor": "#1e1e1e00",
+                "figure.facecolor": "#1e1e1e00",
+                "grid.color": "#44444400",
+                "axes.labelcolor": "white",
+                "xtick.color": "white",
+                "ytick.color": "white",
+                "text.color": "white"
+            })
+
             fig_hist, ax_hist = plt.subplots(figsize=(10, 6))
-            sns.histplot(df['vote_average'], kde=show_kde, bins=bins, color='blue', ax=ax_hist)
-            ax_hist.set_title('Distribuição da nota média', fontsize=14)
-            ax_hist.set_xlabel('Nota média (vote_average)')
-            ax_hist.set_ylabel('Frequência')
+            sns.histplot(
+                data=df,
+                x='vote_average',
+                bins=bins,
+                kde=show_kde,
+                color="#1575b9",
+                edgecolor='white',
+                linewidth=1
+            )
+
+            ax_hist.set_title('Distribuição da Nota Média', fontsize=16, color='white')
+            ax_hist.set_xlabel('Nota Média (vote_average)', fontsize=12, color='white')
+            ax_hist.set_ylabel('Frequência', fontsize=12, color='white')
             ax_hist.grid(axis='y', linestyle='--', alpha=0.5)
             plt.tight_layout()
+
             st.pyplot(fig_hist)
 
         plot_histogram(df, bins, show_kde)
+
+
 
     elif selected_subtopic == "Matriz de Correlação":
         st.write("### Matriz de Correlação (Spearman)")
