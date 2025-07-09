@@ -49,6 +49,18 @@ def run_exploratory_analysis(selected_subtopic):
         st.write("### BoxPlot das Notas Médias por Gênero")
 
         def plot_boxplot_notas_por_genero(df):
+            # Aplica o mesmo estilo do histograma
+            plt.style.use("dark_background")
+            sns.set_style("darkgrid", {
+                "axes.facecolor": "#1e1e1e00",
+                "figure.facecolor": "#1e1e1e00",
+                "grid.color": "#44444400",
+                "axes.labelcolor": "white",
+                "xtick.color": "white",
+                "ytick.color": "white",
+                "text.color": "white"
+            })
+
             df_exploded = df.dropna(subset=['genres']).copy()
             df_exploded['genres'] = df_exploded['genres'].str.split(', ')
             df_exploded = df_exploded.explode('genres')
@@ -61,48 +73,43 @@ def run_exploratory_analysis(selected_subtopic):
 
             if not df_filtrado.empty:
                 media_global = df['vote_average'].mean()
-                fig = go.Figure()
-                cor_padrao = 'steelblue'
-
-                for genero in generos_selecionados:
-                    notas = df_filtrado[df_filtrado['genres_translated'] == genero]['vote_average']
-                    fig.add_trace(go.Box(
-                        x=notas,
-                        name=genero,
-                        boxpoints='all',
-                        jitter=0,
-                        pointpos=0,
-                        marker=dict(color=cor_padrao, size=6, opacity=0.8),
-                        line=dict(color=cor_padrao),
-                        fillcolor=cor_padrao,
-                        marker_symbol='circle',
-                        orientation='h',
-                        showlegend=False
-                    ))
-
-                fig.add_vline(
-                    x=media_global,
-                    line_dash="dash",
-                    line_color="red",
-                    annotation_text=f"Média Global: {media_global:.2f}",
-                    annotation_position="top right",
-                    annotation_font_color="white"
+                df_filtrado['genres_translated'] = pd.Categorical(
+                    df_filtrado['genres_translated'],
+                    categories=generos_selecionados,
+                    ordered=True
                 )
 
-                fig.update_layout(
-                    template="plotly_dark",
-                    height=700,
-                    xaxis_title="Nota Média",
-                    yaxis_title="Gênero",
-                    title="BoxPlot das Notas Médias por Gênero",
-                    title_font=dict(size=18)
+                df_filtrado = df_filtrado.sort_values('genres_translated')
+
+                fig, ax = plt.subplots(figsize=(10, 8))
+                sns.boxplot(
+                    data=df_filtrado,
+                    x='vote_average',
+                    y='genres_translated',
+                    color='#1575b9',
+                    showmeans=True,
+                    meanprops={
+                        "marker": "o",
+                        "markerfacecolor": "white",
+                        "markeredgecolor": "black",
+                        "markersize": 7
+                    }
                 )
 
-                st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
+                ax.axvline(media_global, color='red', linestyle='--', linewidth=2, label=f'Média Global: {media_global:.2f}')
+                ax.set_xlabel("Nota Média", fontsize=12, color='white')
+                ax.set_ylabel("Gênero", fontsize=12, color='white')
+                ax.set_title("BoxPlot das Notas Médias por Gênero", fontsize=15, fontweight='bold', color='white')
+                ax.tick_params(colors='white')
+                ax.legend()
+
+                plt.tight_layout()
+                st.pyplot(fig)
             else:
                 st.info("Nenhum dado disponível para os gêneros selecionados.")
 
         plot_boxplot_notas_por_genero(df)
+
 
     elif selected_subtopic == "Histograma das Notas":
         st.write("### Histograma da distribuição da nota média")
@@ -110,7 +117,6 @@ def run_exploratory_analysis(selected_subtopic):
         show_kde = st.checkbox("Exibir curva de densidade (KDE)", value=True, key="hist_kde")
 
         def plot_histogram(df, bins, show_kde):
-            # Define estilo escuro
             plt.style.use("dark_background")
             sns.set_style("darkgrid", {
                 "axes.facecolor": "#1e1e1e00",
@@ -142,8 +148,6 @@ def run_exploratory_analysis(selected_subtopic):
             st.pyplot(fig_hist)
 
         plot_histogram(df, bins, show_kde)
-
-
 
     elif selected_subtopic == "Matriz de Correlação":
         st.write("### Matriz de Correlação (Spearman)")
