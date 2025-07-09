@@ -39,6 +39,18 @@ def carregarTraducaoGeneros():
             }
     return TRADUCOES_GENEROS
 
+def carregarTraducaoFeatures():
+    TRADUCAO_FEATURES = {
+        'popularity': 'Popularidade',
+        'budget': 'Orçamento',
+        'revenue': 'Receita',
+        'runtime': 'Duração',
+        'vote_average': 'Nota Média',
+        'vote_count': 'Contagem de Votos',
+        'release_year': 'Ano de Lançamento'
+    }
+    return TRADUCAO_FEATURES
+
 def run_exploratory_analysis(selected_subtopic):
     df, df_exploded = load_data('data/filmes_analise.csv')
     media_global = df['vote_average'].mean()
@@ -152,31 +164,84 @@ def run_exploratory_analysis(selected_subtopic):
     elif selected_subtopic == "Matriz de Correlação":
         st.write("### Matriz de Correlação (Spearman)")
 
+        traducao_features = carregarTraducaoFeatures()
+
         def get_numeric_columns(df):
             numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
             if 'id' in numeric_cols:
                 numeric_cols.remove('id')
             return numeric_cols
 
-        def plot_correlation_matrix(df):
-            numeric_cols = get_numeric_columns(df)
-            corr_matrix = df[numeric_cols].corr(method='spearman')
-            fig_corr, ax_corr = plt.subplots(figsize=(8, 6))
+        def plot_correlation_matrix(df, cols, show_diagonal):
+            plt.style.use("dark_background")
+            sns.set_style("darkgrid", {
+                "axes.facecolor": "#1e1e1e00",
+                "figure.facecolor": "#1e1e1e00",
+                "grid.color": "#44444400",
+                "axes.labelcolor": "white",
+                "xtick.color": "white",
+                "ytick.color": "white",
+                "text.color": "white"
+            })
+
+            corr_matrix = df[cols].corr(method='spearman')
+
+            # Traduzir os nomes das colunas e índices, se possível
+            corr_matrix.rename(index=traducao_features, columns=traducao_features, inplace=True)
+
+            if show_diagonal:
+                mask = np.triu(np.ones_like(corr_matrix, dtype=bool), k=1)
+            else:
+                mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
+
+            fig_corr, ax_corr = plt.subplots(figsize=(6, 5))
             sns.heatmap(
                 corr_matrix,
-                annot=True,
+                mask=mask,
                 cmap='RdYlGn',
                 vmin=-1,
                 vmax=1,
                 fmt=".2f",
                 linewidths=0.5,
-                ax=ax_corr
+                ax=ax_corr,
+                square=True,
+                cbar_kws={"shrink": .8},
+                annot=False
             )
-            ax_corr.set_title('Matriz de Correlação (Spearman)', fontsize=14)
+
+            for i in range(len(corr_matrix)):
+                for j in range(len(corr_matrix.columns)):
+                    if not mask[i, j]:
+                        value = corr_matrix.iloc[i, j]
+                        if pd.isna(value):
+                            continue
+                        color_val = sns.color_palette("RdYlGn", as_cmap=True)((value + 1) / 2)
+                        text_color = 'black' if sum(color_val[:3]) > 1.5 else 'white'
+                        ax_corr.text(j + 0.5, i + 0.5, f"{value:.2f}", ha='center', va='center', color=text_color, fontsize=6)
+
+            ax_corr.set_title('Matriz de Correlação (Spearman)', fontsize=10, color='white')
+            ax_corr.tick_params(colors='white', labelsize=8)
             plt.tight_layout()
             st.pyplot(fig_corr)
 
-        plot_correlation_matrix(df)
+        numeric_cols = get_numeric_columns(df)
+        colunas_traduzidas = [traducao_features.get(col, col) for col in numeric_cols]
+
+        selected_cols_traduzidas = st.multiselect(
+            "Selecione as colunas para correlação:",
+            options=colunas_traduzidas,
+            default=colunas_traduzidas
+        )
+
+        traducao_invertida = {v: k for k, v in traducao_features.items()}
+        selected_cols = [traducao_invertida.get(col, col) for col in selected_cols_traduzidas]
+        show_diagonal = st.checkbox("Exibir diagonal (valores 1.0)", value=False)
+
+        if len(selected_cols) >= 2:
+            plot_correlation_matrix(df, selected_cols, show_diagonal)
+        else:
+            st.warning("Selecione pelo menos duas colunas para exibir a matriz.")
+
 
     elif selected_subtopic == "Nota média por Idioma":
         st.write("### nota média por idioma original")
