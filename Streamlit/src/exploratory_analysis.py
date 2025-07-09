@@ -61,7 +61,6 @@ def run_exploratory_analysis(selected_subtopic):
         st.write("### BoxPlot das Notas Médias por Gênero")
 
         def plot_boxplot_notas_por_genero(df):
-            # Aplica o mesmo estilo do histograma
             plt.style.use("dark_background")
             sns.set_style("darkgrid", {
                 "axes.facecolor": "#1e1e1e00",
@@ -156,7 +155,6 @@ def run_exploratory_analysis(selected_subtopic):
             ax_hist.set_ylabel('Frequência', fontsize=12, color='white')
             ax_hist.grid(axis='y', linestyle='--', alpha=0.5)
             plt.tight_layout()
-
             st.pyplot(fig_hist)
 
         plot_histogram(df, bins, show_kde)
@@ -185,8 +183,6 @@ def run_exploratory_analysis(selected_subtopic):
             })
 
             corr_matrix = df[cols].corr(method='spearman')
-
-            # Traduzir os nomes das colunas e índices, se possível
             corr_matrix.rename(index=traducao_features, columns=traducao_features, inplace=True)
 
             if show_diagonal:
