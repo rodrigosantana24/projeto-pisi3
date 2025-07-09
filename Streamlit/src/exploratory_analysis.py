@@ -38,7 +38,7 @@ def carregarTraducaoGeneros():
     return TRADUCOES_GENEROS
 
 def run_exploratory_analysis(selected_subtopic):
-    df, df_exploded = load_data('Streamlit/data/filmes_filtrados_sem_nulos.csv')
+    df, df_exploded = load_data('data/filmes_analise.csv')
     media_global = df['vote_average'].mean()
 
     st.title("Análises Exploratórias")

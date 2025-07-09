@@ -31,12 +31,18 @@ def run_regression(selected_topic):
     if selected_topic == "Resultados dos Modelos":
         # Dados dos modelos
         resultados = [
-                        {"Modelo": "XGBRegressor", "R²": 0.509629, "MAE": 0.484806, "RMSE": 0.639296, "MedAE": 0.386420},
-                        {"Modelo": "SVR", "R²": 0.450195, "MAE": 0.508508, "RMSE": 0.676930, "MedAE": 0.393708},
-                        {"Modelo": "RandomForestRegressor", "R²": 0.476488, "MAE": 0.502198, "RMSE": 0.660546, "MedAE": 0.415460}
+                        {"Modelo": "XGBRegressor", "R²": 0.497353, "MAE": 0.491978, "RMSE": 0.646522, "MedAE": 0.394464},
+                        {"Modelo": "SVR", "R²": 0.454993, "MAE": 0.512859, "RMSE": 0.673214, "MedAE": 0.408498},
+                        {"Modelo": "RandomForestRegressor", "R²": 0.450294, "MAE": 0.512854, "RMSE": 0.676110, "MedAE": 0.403060}
                     ]
-        df_resultados = pd.DataFrame(resultados)
-        styled = df_resultados.style\
+        resultados2 = [
+                        {"Modelo": "XGBRegressor", "R²": 0.385363, "MAE": 0.549527, "RMSE": 0.714926, "MedAE": 0.444526},
+                        {"Modelo": "SVR", "R²": 0.347775, "MAE": 0.567254, "RMSE": 0.736463, "MedAE": 0.464352},
+                        {"Modelo": "RandomForestRegressor", "R²": 0.351069, "MAE": 0.564488, "RMSE": 0.734601, "MedAE": 0.455613}
+                    ]
+        df_resultados1 = pd.DataFrame(resultados)
+        df_resultados2 = pd.DataFrame(resultados2)
+        styled1 = df_resultados1.style\
             .background_gradient(subset=['R²'], cmap='RdYlGn')\
             .background_gradient(subset=['MAE', 'RMSE', 'MedAE'], cmap='RdYlGn_r')\
             .format({
@@ -45,8 +51,19 @@ def run_regression(selected_topic):
                 'RMSE': '{:.6f}',
                 'MedAE': '{:.6f}'
             })
-        st.write("### Tabela de Resultados dos Modelos")
-        st.dataframe(styled, use_container_width=True)
+        styled2 = df_resultados2.style\
+            .background_gradient(subset=['R²'], cmap='RdYlGn')\
+            .background_gradient(subset=['MAE', 'RMSE', 'MedAE'], cmap='RdYlGn_r')\
+            .format({
+                'R²': '{:.6f}',
+                'MAE': '{:.6f}',
+                'RMSE': '{:.6f}',
+                'MedAE': '{:.6f}'
+            })
+        st.write("### Tabela de Resultados dos Modelos COM pupularidade")
+        st.dataframe(styled1, use_container_width=True)
+        st.write("### Tabela de Resultados dos Modelos SEM pupularidade")
+        st.dataframe(styled2, use_container_width=True)
 
     elif selected_topic == "Predição":
         st.header("Faça uma predição")
