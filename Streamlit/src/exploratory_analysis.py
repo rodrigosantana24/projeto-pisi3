@@ -4,6 +4,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import plotly.express as px
+import plotly.graph_objects as go
 
 @st.cache_data
 def load_data(data_path):
@@ -59,39 +60,48 @@ def run_exploratory_analysis(selected_subtopic):
 
             if not df_filtrado.empty:
                 media_global = df['vote_average'].mean()
-                df_filtrado['genres_translated'] = pd.Categorical(
-                    df_filtrado['genres_translated'],
-                    categories=generos_selecionados,
-                    ordered=True
-                )
-                df_filtrado = df_filtrado.sort_values('genres_translated')
+                fig = go.Figure()
+                cor_padrao = 'steelblue'
 
-                fig, ax = plt.subplots(figsize=(10, 8))
-                sns.boxplot(
-                    data=df_filtrado,
-                    x='vote_average',
-                    y='genres_translated',
-                    color='steelblue',
-                    showmeans=True,
-                    meanprops={
-                        "marker": "o",
-                        "markerfacecolor": "white",
-                        "markeredgecolor": "black",
-                        "markersize": 7
-                    }
+                for genero in generos_selecionados:
+                    notas = df_filtrado[df_filtrado['genres_translated'] == genero]['vote_average']
+                    fig.add_trace(go.Box(
+                        x=notas,
+                        name=genero,
+                        boxpoints='all',
+                        jitter=0,
+                        pointpos=0,
+                        marker=dict(color=cor_padrao, size=6, opacity=0.8),
+                        line=dict(color=cor_padrao),
+                        fillcolor=cor_padrao,
+                        marker_symbol='circle',
+                        orientation='h',
+                        showlegend=False
+                    ))
+
+                fig.add_vline(
+                    x=media_global,
+                    line_dash="dash",
+                    line_color="red",
+                    annotation_text=f"Média Global: {media_global:.2f}",
+                    annotation_position="top right",
+                    annotation_font_color="white"
                 )
-                ax.axvline(media_global, color='red', linestyle='--', linewidth=2, label=f'Média Global: {media_global:.2f}')
-                ax.set_xlabel("Nota Média", fontsize=12)
-                ax.set_ylabel("Gênero", fontsize=12)
-                ax.set_title("BoxPlot das Notas Médias por Gênero", fontsize=15, fontweight='bold')
-                ax.legend()
-                plt.tight_layout()
-                st.pyplot(fig)
+
+                fig.update_layout(
+                    template="plotly_dark",
+                    height=700,
+                    xaxis_title="Nota Média",
+                    yaxis_title="Gênero",
+                    title="BoxPlot das Notas Médias por Gênero",
+                    title_font=dict(size=18)
+                )
+
+                st.plotly_chart(fig, use_container_width=True, config={"scrollZoom": True})
             else:
                 st.info("Nenhum dado disponível para os gêneros selecionados.")
 
         plot_boxplot_notas_por_genero(df)
-
 
     elif selected_subtopic == "Histograma das Notas":
         st.write("### Histograma da distribuição da nota média")
@@ -155,14 +165,29 @@ def run_exploratory_analysis(selected_subtopic):
 
     elif selected_subtopic == "Nota média por Gênero":
         st.write("### Nota média por gênero cinematográfico")
+
         def plot_vote_average_by_genre(df_exploded):
-            receita_por_genero = df_exploded.groupby('genre_names')['vote_average'].mean().sort_values(ascending=False).reset_index()
-            fig_genre = px.bar(receita_por_genero, 
-                            x='vote_average', 
-                            y='genre_names', 
-                            labels={'genre_names': 'Gênero', 'vote_average': 'Receita Média'},
-                            color='vote_average',
-                            color_continuous_scale='Teal')
+            traducao_generos = carregarTraducaoGeneros()
+
+            receita_por_genero = (
+                df_exploded.groupby('genre_names')['vote_average']
+                .mean()
+                .sort_values(ascending=False)
+                .reset_index()
+            )
+
+            receita_por_genero['genre_names'] = receita_por_genero['genre_names'].map(
+                traducao_generos
+            ).fillna(receita_por_genero['genre_names'])
+
+            fig_genre = px.bar(
+                receita_por_genero,
+                x='vote_average',
+                y='genre_names',
+                labels={'genre_names': 'Gênero', 'vote_average': 'Nota Média'},
+                color='vote_average',
+                color_continuous_scale='Teal'
+            )
             st.plotly_chart(fig_genre, use_container_width=True, config={"scrollZoom": True})
 
         plot_vote_average_by_genre(df_exploded)
