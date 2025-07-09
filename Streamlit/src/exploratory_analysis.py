@@ -169,8 +169,14 @@ def run_exploratory_analysis(selected_subtopic):
 
     elif selected_subtopic == "Filtro por Nota e Gênero":
         st.write("### Filtros por Nota e Gênero (Spearman)")
+
+        traducao_generos = carregarTraducaoGeneros()
+        generos_ingles = sorted(df_exploded['genre_names'].unique())
+        traducao_reversa = {v: k for k, v in traducao_generos.items()}
+        generos_traduzidos = [traducao_generos.get(gen, gen) for gen in generos_ingles]
         nota_minima = st.slider("Nota mínima", min_value=0.0, max_value=10.0, value=7.0, step=0.1, key="nota_minima")
-        generos_filtro = st.multiselect("Gêneros", sorted(df_exploded['genre_names'].unique()), default=[], key="generos_filtro")
+        generos_selecionados_pt = st.multiselect("Gêneros", generos_traduzidos, default=[], key="generos_filtro")
+        generos_filtro = [traducao_reversa.get(g, g) for g in generos_selecionados_pt]
 
         def filtrar_filmes_por_nota_genero(df, nota_minima, generos):
             df_exploded = df.copy()
@@ -184,10 +190,12 @@ def run_exploratory_analysis(selected_subtopic):
 
         if generos_filtro:
             filmes_filtrados = filtrar_filmes_por_nota_genero(df, nota_minima, generos_filtro)
+            filmes_filtrados['genre_names'] = filmes_filtrados['genre_names'].map(traducao_generos)
             st.write(f"Filmes encontrados: {len(filmes_filtrados)}")
             st.dataframe(filmes_filtrados[['title', 'vote_average', 'genre_names']])
         else:
             st.write("Selecione pelo menos um gênero.")
+
     
     elif selected_subtopic == "Evolução da Nota Média ao Longo dos Anos":
         st.write("### Evolução da Nota Média ao Longo dos Anos")
@@ -206,7 +214,6 @@ def run_exploratory_analysis(selected_subtopic):
     elif selected_subtopic == "Nota Média por Faixa de Orçamento":
         st.write("### Nota Média por Faixa de Orçamento")
 
-        # Definindo mais faixas
         bins = [0, 5e6, 1e7, 2e7, 5e7, 1e8, 2e8, 3e8, df['budget'].max()]
         labels = ['Até 5M', '5M–10M', '10M–20M', '20M–50M', '50M–100M', '100M–200M', '200M–300M', '300M+']
         
