@@ -1,5 +1,6 @@
 # ==============================================================================
 # ARQUIVO PRINCIPAL: main_streamlit.py
+# pip install streamlit pandas numpy joblib scikit-learn xgboost scipy matplotlib seaborn plotly statsmodels shap streamlit-tags streamlit_searchbox
 # ==============================================================================
 
 import streamlit as st
