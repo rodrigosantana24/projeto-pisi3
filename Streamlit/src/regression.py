@@ -5,19 +5,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.preprocessing import StandardScaler
 import pickle
-<<<<<<< Updated upstream
-from custom_transformers import (
-    DateFeatureExtractor,
-    CapTransformer,
-    RareCategoryGrouper,
-    TopNMultiLabelTransformer,
-    BudgetRuntimeRatioTransformer
-)
-=======
 import joblib
 import sys
 import src.custom_transformers
->>>>>>> Stashed changes
 
 def show_regression_report_table(y_true, y_pred):
     """Exibe métricas de regressão como tabela colorida no Streamlit."""
@@ -81,17 +71,12 @@ def run_regression(selected_topic):
     elif selected_topic == "Predição":
         st.header("Faça uma predição")
 
-<<<<<<< Updated upstream
-        with open('Streamlit/models/best_model.pkl', 'rb') as f:
-            modelo = pickle.load(f)
-            
-=======
-            # SOLUÇÃO DO ERRO: cria um alias para 'custom_transformers'
-        
+        # SOLUÇÃO DO ERRO: cria um alias para 'custom_transformers'
+        import sys
+        import src.custom_transformers
         sys.modules["custom_transformers"] = src.custom_transformers
 
         # Agora pode carregar o modelo
         modelo = joblib.load("Streamlit/models/best_model.pkl")
 
         st.success("Modelo carregado com sucesso!")
->>>>>>> Stashed changes
