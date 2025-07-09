@@ -72,7 +72,6 @@ def load_df_analisado(data_path_df, expected_cluster_col_name):
         st.error(f"Erro interno: A coluna '{expected_cluster_col_name}' não foi corretamente estabelecida no DataFrame.")
         return None
 
-    st.success(f"Dados de '{data_path_df}' carregados e coluna de cluster '{expected_cluster_col_name}' pronta!")
     return df
 
 def plot_elbow_method(X, features):
@@ -319,7 +318,7 @@ def clustering_recommendation():
     selected_movie = st_searchbox(
         label="Digite o nome do filme para buscar:",
         search_function=lambda search_term: get_movie_suggestions(search_term, all_titles),
-        placeholder="Ex: Interstellar, Matrix...",
+        placeholder="Digite o título de um filme",
         key="movie_search_box"
     )
 
