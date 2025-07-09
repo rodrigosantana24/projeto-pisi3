@@ -78,7 +78,7 @@ def plot_elbow_method(X, features):
     scaler = RobustScaler()
     X_scaled = scaler.fit_transform(X[features])
     wss = []
-    k_values = list(range(1, 11))
+    k_values = list(range(1, 16))
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         kmeans.fit(X_scaled)
@@ -94,7 +94,7 @@ def plot_elbow_method(X, features):
 
 def plot_calinski_harabasz_method(X_scaled):
     chi_scores = []
-    k_values = list(range(2, 11))
+    k_values = list(range(2, 16))
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
@@ -119,7 +119,7 @@ def plot_calinski_harabasz_method(X_scaled):
 
 def plot_davies_bouldin_method(X_scaled):
     dbi_scores = []
-    k_values = list(range(2, 11))
+    k_values = list(range(2, 16))
     for k in k_values:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = kmeans.fit_predict(X_scaled)
