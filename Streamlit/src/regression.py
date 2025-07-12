@@ -78,7 +78,7 @@ def _build_prediction_interface(modelo, show_popularity_input, training_columns)
             with st.spinner('Analisando dados e fazendo a previsão...'):
                 prediction = pipeline_final.predict(input_df)
                 predicted_score = round(prediction[0], 2)
-                st.success(f"## A nota média prevista para o filme é: **{predicted_score}** ⭐")
+                st.success(f"## A nota média prevista para o filme é: **{predicted_score:.2f}** ⭐")
 
             st.subheader("Ranking das Características Mais Impactantes (SHAP)")
             st.info("Em **vermelho**, as features que **aumentaram** a nota. Em **azul**, as que **diminuíram**.")
