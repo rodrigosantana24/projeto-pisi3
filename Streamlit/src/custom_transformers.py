@@ -199,9 +199,6 @@ class BudgetRuntimeRatioTransformer(BaseEstimator, TransformerMixin):
         return X
 
     def get_feature_names_out(self, input_features=None):
-        # --- CORREÇÃO ---
-        # A implementação original estava quase certa, mas esta é mais robusta.
-        # Garante que as colunas originais não sejam duplicadas se já estiverem lá.
         output_features = list(input_features)
         if self.new_col_name not in output_features:
             output_features.append(self.new_col_name)
