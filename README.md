@@ -35,8 +35,6 @@ O dataset utilizado foi obtido da plataforma Kaggle, contendo milhões de regist
 - 📊 **Análise de Dados**: `pandas`, `numpy`, `scikit-learn`
 - 📈 **Visualização de Dados**: `streamlit`, `matplotlib`, `seaborn`, `plotly`
 - 🧠 **Modelos de Machine Learning**: `XGBRegressor`, `SVR`, `RandomForestRegressor`, `KMeans`
-- 🔍 **Clusterização e Regressão**: `KMeans`, `LinearRegression`, `SVR`, `XGBRegressor`
-- 🛠️ **Engenharia de Atributos e Pipeline**: `scikit-learn`, `joblib`
 
 ---
 
