@@ -74,8 +74,9 @@ Abaixo estão os notebooks responsáveis por diferentes etapas do projeto:
 |---------------------|-----------------------------|
 | Victor de Souza     | victorsouza183@gmail.com   |
 | Gabriel Vinícius     | gabrielvto18@gmail.com   |
+| Thalyson Kauan     | thalyson.kauan7@gmail.com   |
 
-## 🚀 Como Executar
+#|# 🚀 Como Executar
 
 1. Clone este repositório:
    ```bash
