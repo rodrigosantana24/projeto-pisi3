@@ -75,8 +75,8 @@ Abaixo estão os notebooks responsáveis por diferentes etapas do projeto:
 | Gabriel Vinícius     | gabrielvto18@gmail.com   |
 | Luan Vinícius     | limaluan32104@gmail.com   |
 | Rodrigo Santana     | rodrigosantana.dev@gmail.com   |
-| Victor de Souza     | victorsouza183@gmail.com   |
 | Thalyson Kauan    | thalyson.kauan7@gmail.com |
+| Victor de Souza     | victorsouza183@gmail.com   |
 
 ## 🚀 Como Executar
 
